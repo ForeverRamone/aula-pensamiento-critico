@@ -151,6 +151,7 @@ const q = {
   ),
   updateUserRole: db.prepare('UPDATE users SET role = ? WHERE id = ?'),
   updateUserPassword: db.prepare('UPDATE users SET password_hash = ? WHERE id = ?'),
+  updateUserNameEmail: db.prepare('UPDATE users SET name = ?, email = ? WHERE id = ?'),
   deleteUser: db.prepare('DELETE FROM users WHERE id = ?'),
   countAdmins: db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'"),
   materialsByUser: db.prepare('SELECT file_kind, file_path FROM materials WHERE user_id = ?'),
@@ -1192,6 +1193,25 @@ app.post('/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
   }
   q.updateUserRole.run(newRole, u.id);
   flash(req, 'success', `${u.name} ahora es ${newRole === 'admin' ? 'administrador' : 'participante'}.`);
+  res.redirect('/admin#usuarios');
+});
+
+app.post('/admin/users/:id/edit', requireAuth, requireAdmin, (req, res) => {
+  const u = q.userById.get(Number(req.params.id));
+  if (!u) { flash(req, 'error', 'Usuario no encontrado.'); return res.redirect('/admin#usuarios'); }
+  const name = String(req.body.name || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    flash(req, 'error', 'Revisa el nombre y el email.');
+    return res.redirect('/admin#usuarios');
+  }
+  const other = q.userByEmail.get(email);
+  if (other && other.id !== u.id) {
+    flash(req, 'error', 'Ese email ya lo usa otra cuenta.');
+    return res.redirect('/admin#usuarios');
+  }
+  q.updateUserNameEmail.run(name, email, u.id);
+  flash(req, 'success', `Datos de ${name} actualizados.`);
   res.redirect('/admin#usuarios');
 });
 

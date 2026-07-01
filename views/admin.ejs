@@ -72,6 +72,14 @@
               <button class="link-btn"><%= u.role === 'admin' ? 'Quitar admin' : 'Hacer admin' %></button>
             </form>
             <details class="au-pass">
+              <summary>Datos</summary>
+              <form action="/admin/users/<%= u.id %>/edit" method="post" class="au-editform">
+                <input type="text" name="name" value="<%= u.name %>" placeholder="nombre" required>
+                <input type="email" name="email" value="<%= u.email %>" placeholder="email" required>
+                <button class="btn btn-ghost btn-sm" type="submit">Guardar</button>
+              </form>
+            </details>
+            <details class="au-pass">
               <summary>Contraseña</summary>
               <form action="/admin/users/<%= u.id %>/password" method="post" class="au-passform">
                 <input type="text" name="password" placeholder="nueva contraseña (mín. 6)" minlength="6" required>
