@@ -14,6 +14,7 @@ const sanitizeHtml = require('sanitize-html');
 
 const { db, UPLOAD_DIR } = require('./db');
 const SqliteStore = require('./sessionStore');
+const course = require('./course');
 
 // ---- Configuración (todo se puede fijar por variables de entorno) ----
 const PORT = process.env.PORT || 3000;
@@ -382,6 +383,8 @@ app.use((req, res, next) => {
   res.locals.numSessions = currentNumSessions();
   res.locals.materialKinds = MATERIAL_KINDS;
   res.locals.activityParts = ACTIVITY_PARTS;
+  res.locals.course = course;
+  res.locals.fmtSessionDate = fmtSessionDate;
   delete req.session.flash;
   next();
 });
@@ -405,6 +408,27 @@ function requireAdmin(req, res, next) {
     return res.redirect('/materiales');
   }
   next();
+}
+
+// Calcula el estado de la agenda: sesiones (con marca de hoy/pasada), la próxima
+// y los días que faltan para la entrega de la actividad final.
+function courseAgenda() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const sessions = course.sessions.map((s) => {
+    const d = new Date(s.date + 'T00:00:00');
+    return { ...s, dateObj: d, isToday: d.getTime() === today.getTime(), isPast: d < today };
+  });
+  const next = sessions.find((s) => s.dateObj >= today) || null;
+  const deadline = new Date(course.deadline + 'T00:00:00');
+  const daysToDeadline = Math.round((deadline - today) / 86400000);
+  return { sessions, next, daysToDeadline };
+}
+
+function fmtSessionDate(s) {
+  return new Date(s + 'T00:00:00').toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
 }
 
 function fmtDate(s) {
@@ -499,6 +523,7 @@ app.get('/', requireAuth, (req, res) => {
   res.render('dashboard', {
     title: 'Inicio',
     active: 'inicio',
+    agenda: courseAgenda(),
     stats: {
       materials: q.countMaterials.get().n,
       posts: q.countPosts.get().n,
@@ -507,6 +532,11 @@ app.get('/', requireAuth, (req, res) => {
     materials,
     posts,
   });
+});
+
+// Página del curso: datos generales, criterios de certificación y las 5 sesiones.
+app.get('/curso', requireAuth, (req, res) => {
+  res.render('curso', { title: 'El curso', active: 'curso', agenda: courseAgenda() });
 });
 
 // ---- Materiales del curso ----

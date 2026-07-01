@@ -1,0 +1,49 @@
+<div class="page-head">
+  <h1><%= course.name %></h1>
+  <p class="course-sub"><%= course.subtitle %></p>
+</div>
+
+<section class="course-facts">
+  <div class="fact"><span class="fact-l">Coordinador</span><span class="fact-v"><%= course.coordinator %></span></div>
+  <div class="fact"><span class="fact-l">Centro</span><span class="fact-v"><%= course.center %></span></div>
+  <div class="fact"><span class="fact-l">Fechas</span><span class="fact-v"><%= course.dates %></span></div>
+  <div class="fact"><span class="fact-l">Lugar</span><span class="fact-v"><%= course.place %></span></div>
+  <div class="fact"><span class="fact-l">Duración</span><span class="fact-v"><%= course.hours %></span></div>
+  <div class="fact"><span class="fact-l">Formación</span><span class="fact-v"><%= course.line %></span></div>
+</section>
+
+<section class="cert-box">
+  <h2>Para certificar</h2>
+  <ul>
+    <% course.certification.forEach(function(c){ %><li><%= c %></li><% }) %>
+  </ul>
+  <% if (agenda.daysToDeadline > 0) { %>
+    <p class="cert-deadline">Entrega de la actividad final: <strong>en <%= agenda.daysToDeadline %> <%= agenda.daysToDeadline === 1 ? 'día' : 'días' %></strong> (<%= fmtSessionDate(course.deadline) %>). <a href="/actividad">Ir a mi actividad →</a></p>
+  <% } else if (agenda.daysToDeadline === 0) { %>
+    <p class="cert-deadline"><strong>La entrega es hoy.</strong> <a href="/actividad">Ir a mi actividad →</a></p>
+  <% } else { %>
+    <p class="cert-deadline">El plazo de entrega finalizó el <%= fmtSessionDate(course.deadline) %>.</p>
+  <% } %>
+</section>
+
+<h2 class="section-h">Las cinco sesiones</h2>
+<ol class="timeline">
+  <% agenda.sessions.forEach(function(s){ %>
+    <li class="tl-item <%= s.isToday ? 'is-today' : (s.isPast ? 'is-past' : '') %>">
+      <div class="tl-num">
+        <span><%= s.n %></span>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head">
+          <h3>Sesión <%= s.n %> · <%= s.title %></h3>
+          <% if (s.isToday) { %><span class="tl-tag tag-today">hoy</span><% } %>
+        </div>
+        <span class="meta"><%= fmtSessionDate(s.date) %> · <%= s.time %></span>
+        <ul class="tl-blocks">
+          <% s.blocks.forEach(function(b){ %><li><%= b %></li><% }) %>
+        </ul>
+        <a class="chip" href="/materiales#">Materiales de la sesión <%= s.n %></a>
+      </div>
+    </li>
+  <% }) %>
+</ol>

@@ -7,6 +7,34 @@
   </div>
 </section>
 
+<section class="agenda-strip">
+  <% if (agenda.next) { %>
+    <div class="agenda-next">
+      <span class="agenda-label"><%= agenda.next.isToday ? 'Hoy' : 'Próxima sesión' %></span>
+      <strong>Sesión <%= agenda.next.n %> · <%= agenda.next.title %></strong>
+      <span class="meta"><%= fmtSessionDate(agenda.next.date) %> · <%= agenda.next.time %></span>
+    </div>
+  <% } else { %>
+    <div class="agenda-next">
+      <span class="agenda-label">Sesiones</span>
+      <strong>El curso presencial ha finalizado</strong>
+      <span class="meta">Aquí siguen los materiales y tu actividad final.</span>
+    </div>
+  <% } %>
+  <div class="agenda-deadline">
+    <% if (agenda.daysToDeadline > 0) { %>
+      <span class="agenda-num"><%= agenda.daysToDeadline %></span>
+      <span class="agenda-label"><%= agenda.daysToDeadline === 1 ? 'día para la entrega' : 'días para la entrega' %></span>
+    <% } else if (agenda.daysToDeadline === 0) { %>
+      <span class="agenda-num">¡Hoy!</span>
+      <span class="agenda-label">es la entrega</span>
+    <% } else { %>
+      <span class="agenda-label">Plazo de entrega cerrado</span>
+    <% } %>
+  </div>
+  <a class="btn btn-ghost btn-sm" href="/curso">Ver la agenda →</a>
+</section>
+
 <section class="stats">
   <div class="stat"><span class="stat-n"><%= stats.materials %></span><span class="stat-l">materiales</span></div>
   <div class="stat"><span class="stat-n"><%= stats.posts %></span><span class="stat-l">aportaciones</span></div>

@@ -455,6 +455,59 @@ a:hover { text-decoration: underline; }
 .mod-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mod-body strong { font-weight: 600; }
 
+/* ---- Franja de agenda (inicio) ---- */
+.agenda-strip {
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  background: var(--ink); color: var(--paper); border-radius: var(--radius);
+  padding: 18px 24px; margin-bottom: 40px;
+}
+.agenda-next { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 2px; }
+.agenda-next strong { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.agenda-next .meta { color: rgba(247,243,236,.7); }
+.agenda-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: rgba(247,243,236,.6); }
+.agenda-deadline { text-align: center; border-left: 1px solid rgba(247,243,236,.18); padding-left: 24px; }
+.agenda-num { display: block; font-family: var(--serif); font-size: 30px; font-weight: 700; line-height: 1; color: var(--paper); }
+.agenda-strip .btn-ghost { border-color: rgba(247,243,236,.3); color: var(--paper); }
+.agenda-strip .btn-ghost:hover { background: rgba(247,243,236,.1); }
+
+/* ---- Página del curso ---- */
+.course-sub { font-size: 18px; color: var(--ink-soft); margin: 4px 0 0; }
+.course-facts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 26px;
+}
+.fact { background: var(--paper-2); padding: 14px 18px; }
+.fact-l { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); margin-bottom: 3px; }
+.fact-v { font-weight: 500; }
+
+.cert-box { background: rgba(178,83,52,.06); border: 1px solid rgba(178,83,52,.2); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 40px; }
+.cert-box h2 { font-family: var(--serif); font-weight: 600; font-size: 20px; margin: 0 0 10px; }
+.cert-box ul { margin: 0 0 12px; padding-left: 20px; }
+.cert-box li { margin: 4px 0; }
+.cert-deadline { margin: 0; color: var(--ink-soft); }
+
+.timeline { list-style: none; margin: 0; padding: 0; }
+.tl-item { display: flex; gap: 18px; padding-bottom: 22px; position: relative; }
+.tl-item:not(:last-child) .tl-num:after {
+  content: ""; position: absolute; left: 50%; top: 40px; bottom: 0; width: 2px;
+  background: var(--line); transform: translateX(-50%);
+}
+.tl-num { position: relative; flex: none; }
+.tl-num span {
+  display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  border-radius: 50%; background: var(--paper-2); border: 2px solid var(--line);
+  font-family: var(--serif); font-weight: 600; font-size: 18px; color: var(--ink-soft);
+}
+.tl-item.is-past .tl-num span { background: var(--line); color: var(--ink-soft); }
+.tl-item.is-today .tl-num span { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tl-body { flex: 1; padding-top: 4px; }
+.tl-head { display: flex; align-items: center; gap: 10px; }
+.tl-head h3 { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 0; }
+.tl-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+.tag-today { background: var(--accent); color: #fff; }
+.tl-blocks { margin: 8px 0 10px; padding-left: 18px; color: var(--ink-soft); }
+.tl-blocks li { margin: 3px 0; }
+
 /* ---- Responsive ---- */
 @media (max-width: 680px) {
   .cols { grid-template-columns: 1fr; }
