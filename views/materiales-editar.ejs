@@ -1,0 +1,58 @@
+<div class="page-head">
+  <a class="back" href="/materiales">← Volver a materiales</a>
+  <h1>Editar material</h1>
+</div>
+
+<form action="/materiales/<%= m.id %>/editar" method="post" enctype="multipart/form-data" class="form admin-card">
+  <div class="row">
+    <label>Sesión
+      <select name="session">
+        <% for (let s = 1; s <= numSessions; s++) { %>
+          <option value="<%= s %>" <%= Number(m.session) === s ? 'selected' : '' %>>Sesión <%= s %></option>
+        <% } %>
+        <option value="0" <%= Number(m.session) === 0 ? 'selected' : '' %>>General (sin sesión)</option>
+      </select>
+    </label>
+    <label>Categoría
+      <select name="kind">
+        <% Object.keys(materialKinds).forEach(function(k){ %>
+          <option value="<%= k %>" <%= m.kind === k ? 'selected' : '' %>><%= materialKinds[k] %></option>
+        <% }) %>
+      </select>
+    </label>
+  </div>
+
+  <label>Título
+    <input type="text" name="title" required value="<%= m.title %>">
+  </label>
+
+  <label>Descripción <span class="hint">(opcional)</span>
+    <textarea name="description" rows="2"><%= m.description || '' %></textarea>
+  </label>
+
+  <label>Enlace <span class="hint">(web, o Google Slides/Drive)</span>
+    <input type="text" name="url" value="<%= m.url || '' %>" placeholder="https://…">
+  </label>
+
+  <div class="current-file">
+    <% if (m.file_kind === 'pdf') { %>
+      Archivo actual: <strong>PDF</strong> (<%= m.file_name %>)
+    <% } else if (m.file_kind === 'slides') { %>
+      Archivo actual: <strong>presentación</strong> (<%= m.slide_count %> diapositivas)
+    <% } else if (m.file_kind === 'file') { %>
+      Archivo actual: <strong><%= m.file_name %></strong>
+    <% } else if (m.file_kind === 'embed') { %>
+      Contenido actual: <strong>diapositivas de Google</strong> (por enlace)
+    <% } else { %>
+      Sin archivo adjunto.
+    <% } %>
+  </div>
+  <label>Reemplazar archivo <span class="hint">(opcional; déjalo vacío para conservar el actual)</span>
+    <input type="file" name="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png">
+  </label>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    <a class="btn btn-ghost" href="/materiales">Cancelar</a>
+  </div>
+</form>

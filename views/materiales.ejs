@@ -78,9 +78,14 @@
       <div class="card-foot">
         <span class="meta">por <%= m.author %> · <%= fmtDate(m.created_at) %></span>
         <% if (m.user_id === currentUser.id || currentUser.role === 'admin') { %>
-          <form action="/materiales/<%= m.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este material?')">
-            <button class="link-btn danger">Eliminar</button>
-          </form>
+          <div class="card-actions">
+            <% if (currentUser.role === 'admin') { %>
+              <a class="link-btn" href="/materiales/<%= m.id %>/editar">Editar</a>
+            <% } %>
+            <form action="/materiales/<%= m.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este material?')">
+              <button class="link-btn danger">Eliminar</button>
+            </form>
+          </div>
         <% } %>
       </div>
     </li>

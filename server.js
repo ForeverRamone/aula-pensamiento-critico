@@ -42,6 +42,11 @@ const q = {
      JOIN users u ON u.id = m.user_id ORDER BY m.created_at DESC, m.id DESC`
   ),
   materialById: db.prepare('SELECT * FROM materials WHERE id = ?'),
+  updateMaterial: db.prepare(
+    `UPDATE materials SET session = ?, kind = ?, title = ?, description = ?, url = ?,
+            embed_url = ?, file_path = ?, file_name = ?, file_kind = ?, slide_count = ?
+     WHERE id = ?`
+  ),
   deleteMaterial: db.prepare('DELETE FROM materials WHERE id = ?'),
   countMaterials: db.prepare('SELECT COUNT(*) AS n FROM materials'),
 
@@ -611,6 +616,74 @@ app.post('/materiales/:id/delete', requireAuth, (req, res) => {
   } else {
     flash(req, 'error', 'No puedes eliminar ese material.');
   }
+  res.redirect('/materiales');
+});
+
+// Editar un material (solo admin): título, descripción, sesión, categoría,
+// enlace y, opcionalmente, reemplazar el archivo.
+app.get('/materiales/:id/editar', requireAuth, requireAdmin, (req, res) => {
+  const m = q.materialById.get(Number(req.params.id));
+  if (!m) {
+    flash(req, 'error', 'Material no encontrado.');
+    return res.redirect('/materiales');
+  }
+  res.render('materiales-editar', { title: 'Editar material', active: 'materiales', m });
+});
+
+app.post('/materiales/:id/editar', requireAuth, requireAdmin, upload.single('file'), (req, res) => {
+  const m = q.materialById.get(Number(req.params.id));
+  if (!m) {
+    if (req.file) fs.rmSync(req.file.path, { force: true });
+    flash(req, 'error', 'Material no encontrado.');
+    return res.redirect('/materiales');
+  }
+
+  const title = String(req.body.title || '').trim();
+  const description = String(req.body.description || '').trim();
+  const kind = MATERIAL_KINDS[req.body.kind] ? req.body.kind : m.kind;
+  let session = parseInt(req.body.session, 10);
+  if (!Number.isInteger(session) || session < 0 || session > currentNumSessions()) session = 0;
+  let url = String(req.body.url || '').trim();
+  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  if (!title) {
+    if (req.file) fs.rmSync(req.file.path, { force: true });
+    flash(req, 'error', 'El material necesita un título.');
+    return res.redirect('/materiales/' + m.id + '/editar');
+  }
+
+  // Partimos de los datos actuales del archivo.
+  let filePath = m.file_path, fileKind = m.file_kind, fileName = m.file_name;
+  let slideCount = m.slide_count, embedUrl = m.embed_url;
+
+  // Si se sube un archivo nuevo, reemplaza al anterior.
+  if (req.file) {
+    try {
+      const r = processUpload(req.file);
+      removeMaterialFiles(m); // borra el archivo/diapositivas anteriores
+      filePath = r.filePath; fileKind = r.fileKind; slideCount = r.slideCount;
+      fileName = req.file.originalname; embedUrl = null;
+    } catch (err) {
+      console.error('Editar material (archivo):', err.message);
+      fs.rmSync(req.file.path, { force: true });
+      fs.rmSync(path.join(UPLOAD_DIR, path.basename(req.file.filename, path.extname(req.file.filename))), { recursive: true, force: true });
+      flash(req, 'error', 'No se pudo preparar la presentación. Súbela como PDF.');
+      return res.redirect('/materiales/' + m.id + '/editar');
+    }
+  }
+
+  // Si el material no tiene archivo, el enlace decide: Google embebible o enlace normal.
+  const hasFile = fileKind === 'pdf' || fileKind === 'slides' || fileKind === 'file';
+  if (!hasFile) {
+    embedUrl = url ? googleEmbed(url) : null;
+    fileKind = embedUrl ? 'embed' : null;
+  }
+
+  q.updateMaterial.run(
+    session, kind, title, description || null, url || null,
+    embedUrl, filePath, fileName, fileKind, slideCount, m.id
+  );
+  flash(req, 'success', 'Material actualizado.');
   res.redirect('/materiales');
 });
 
