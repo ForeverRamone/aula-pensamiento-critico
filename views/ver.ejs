@@ -11,8 +11,26 @@
   <iframe class="pdf-frame" src="/uploads/<%= item.file_path %>" title="<%= item.title %>"></iframe>
 
 <% } else if (item.file_kind === 'embed') { %>
-  <p class="viewer-note">Documento de Google en modo lector<% if (item.url) { %> · <a href="<%= item.url %>" target="_blank" rel="noopener">abrir en Google</a><% } %></p>
-  <iframe class="embed-frame" src="<%= item.embed_url %>" title="<%= item.title %>" allowfullscreen></iframe>
+  <% var embedSrc = String(item.embed_url || '').replace(/[?&]rm=minimal/, ''); %>
+  <div class="embed-controls">
+    <button type="button" class="btn btn-primary btn-sm" id="fs-btn">⛶ Pantalla completa</button>
+    <span class="viewer-note">Usa las flechas ◀ ▶ del reproductor para pasar de diapositiva.</span>
+  </div>
+  <div class="embed-wrap" id="embed-wrap">
+    <iframe class="embed-frame" src="<%= embedSrc %>" title="<%= item.title %>" allowfullscreen allow="fullscreen"></iframe>
+  </div>
+  <script>
+    (function () {
+      var btn = document.getElementById('fs-btn');
+      var wrap = document.getElementById('embed-wrap');
+      if (!btn || !wrap) return;
+      btn.addEventListener('click', function () {
+        var el = wrap;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      });
+    })();
+  </script>
 
 <% } else if (item.file_kind === 'slides') { %>
   <% if (slides.length === 0) { %>

@@ -254,7 +254,9 @@ function googleEmbed(url) {
   if (!url) return null;
   let m;
   if ((m = url.match(/docs\.google\.com\/presentation\/d\/([\w-]+)/))) {
-    return `https://docs.google.com/presentation/d/${m[1]}/embed?start=false&loop=false&rm=minimal`;
+    // Sin rm=minimal: así el reproductor de Google muestra sus controles
+    // (flechas anterior/siguiente, contador y pantalla completa).
+    return `https://docs.google.com/presentation/d/${m[1]}/embed?start=false&loop=false`;
   }
   if ((m = url.match(/docs\.google\.com\/document\/d\/([\w-]+)/))) {
     return `https://docs.google.com/document/d/${m[1]}/preview`;

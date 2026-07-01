@@ -11,7 +11,6 @@
     <span class="chip chip-muted" title="Solo consulta">consulta en la web</span>
   <% } else if (item.file_kind === 'embed') { %>
     <a class="chip chip-view" href="<%= viewerBase %>/<%= item.id %>/ver">▤ Ver diapositivas</a>
-    <% if (item.url) { %><a class="chip" href="<%= item.url %>" target="_blank" rel="noopener">↗ Abrir en Google</a><% } %>
   <% } else if (item.file_kind === 'file') { %>
     <a class="chip" href="/uploads/<%= item.file_path %>" download="<%= item.file_name %>">⬇ <%= item.file_name %></a>
   <% } %>
