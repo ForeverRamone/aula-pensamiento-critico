@@ -455,6 +455,21 @@ a:hover { text-decoration: underline; }
 .mod-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mod-body strong { font-weight: 600; }
 
+/* ---- Participación (reacciones, destacados, novedades) ---- */
+.wall-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.react-btn {
+  font: inherit; font-size: 13px; cursor: pointer; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; color: var(--ink-soft);
+}
+.react-btn:hover { border-color: var(--teal); color: var(--teal); }
+.react-btn.is-on { background: rgba(47,111,104,.12); border-color: var(--teal); color: var(--teal); font-weight: 600; }
+.star { color: var(--gold); font-size: 16px; }
+.news-banner {
+  display: flex; align-items: center; gap: 10px; background: rgba(176,130,47,.1);
+  border: 1px solid rgba(176,130,47,.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 28px;
+}
+.news-dot { color: var(--gold); font-size: 22px; line-height: 0; }
+
 /* ---- Evaluación de la actividad ---- */
 .submit-panel {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

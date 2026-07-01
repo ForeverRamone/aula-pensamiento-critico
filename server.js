@@ -568,10 +568,22 @@ app.post('/logout', (req, res) => {
 app.get('/', requireAuth, (req, res) => {
   const materials = q.listMaterials.all().slice(0, 5);
   const posts = q.listPosts.all().slice(0, 5);
+
+  // Novedades desde la última visita, y actualiza la marca de "última visita".
+  const me = q.userById.get(req.session.user.id);
+  let news = null;
+  if (me && me.last_seen) {
+    const s = me.last_seen;
+    const c = q.countSince.get(s, s, s);
+    if (c.materials + c.posts + c.comments > 0) news = c;
+  }
+  q.updateLastSeen.run(new Date().toISOString().slice(0, 19).replace('T', ' '), req.session.user.id);
+
   res.render('dashboard', {
     title: 'Inicio',
     active: 'inicio',
     agenda: courseAgenda(),
+    news,
     stats: {
       materials: q.countMaterials.get().n,
       posts: q.countPosts.get().n,
@@ -786,24 +798,55 @@ app.post('/materiales/:id/editar', requireAuth, requireAdmin, upload.single('fil
 
 // ---- Muro: prompts, ideas y recursos de los participantes ----
 app.get('/muro', requireAuth, (req, res) => {
+  const onlyFeatured = req.query.destacados === '1';
   const filter = POST_TYPES[req.query.tipo] ? req.query.tipo : null;
   let posts = q.listPosts.all();
   if (filter) posts = posts.filter((p) => p.type === filter);
+  if (onlyFeatured) posts = posts.filter((p) => p.featured);
 
-  // Agrupa los comentarios por publicación y los cuelga de cada post.
+  // Comentarios agrupados por publicación.
   const byPost = new Map();
   for (const c of q.listComments.all()) {
     if (!byPost.has(c.post_id)) byPost.set(c.post_id, []);
     byPost.get(c.post_id).push(c);
   }
-  posts = posts.map((p) => ({ ...p, comments: byPost.get(p.id) || [] }));
+  // Reacciones: recuento por publicación y cuáles ha marcado el usuario actual.
+  const counts = {};
+  for (const r of q.reactionCounts.all()) counts[r.post_id] = r.n;
+  const mine = new Set(q.myReactions.all(req.session.user.id).map((r) => r.post_id));
+  posts = posts.map((p) => ({
+    ...p,
+    comments: byPost.get(p.id) || [],
+    reactions: counts[p.id] || 0,
+    reacted: mine.has(p.id),
+  }));
 
   res.render('muro', {
     title: 'Muro compartido',
     active: 'muro',
     posts,
     filter,
+    onlyFeatured,
   });
+});
+
+app.post('/muro/:id/reaccion', requireAuth, (req, res) => {
+  const p = q.postById.get(Number(req.params.id));
+  if (p) {
+    const has = q.myReactions.all(req.session.user.id).some((r) => r.post_id === p.id);
+    if (has) q.removeReaction.run(p.id, req.session.user.id);
+    else q.addReaction.run(p.id, req.session.user.id);
+  }
+  res.redirect('/muro' + (req.query.destacados ? '?destacados=1' : '') + '#post-' + req.params.id);
+});
+
+app.post('/muro/:id/destacar', requireAuth, requireAdmin, (req, res) => {
+  const p = q.postById.get(Number(req.params.id));
+  if (p) {
+    q.setFeatured.run(p.featured ? 0 : 1, p.id);
+    flash(req, 'success', p.featured ? 'Quitado de destacados.' : 'Marcado como destacado.');
+  }
+  res.redirect('back');
 });
 
 app.post('/muro', requireAuth, (req, res) => {

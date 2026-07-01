@@ -35,6 +35,19 @@
   <a class="btn btn-ghost btn-sm" href="/curso">Ver la agenda →</a>
 </section>
 
+<% if (news) { %>
+  <div class="news-banner">
+    <span class="news-dot">•</span>
+    <span>Desde tu última visita:
+      <% var parts = [];
+         if (news.materials) parts.push(news.materials + (news.materials === 1 ? ' material nuevo' : ' materiales nuevos'));
+         if (news.posts) parts.push(news.posts + (news.posts === 1 ? ' aportación' : ' aportaciones'));
+         if (news.comments) parts.push(news.comments + (news.comments === 1 ? ' comentario' : ' comentarios'));
+      %><strong><%= parts.join(' · ') %></strong>.
+    </span>
+  </div>
+<% } %>
+
 <section class="stats">
   <div class="stat"><span class="stat-n"><%= stats.materials %></span><span class="stat-l">materiales</span></div>
   <div class="stat"><span class="stat-n"><%= stats.posts %></span><span class="stat-l">aportaciones</span></div>

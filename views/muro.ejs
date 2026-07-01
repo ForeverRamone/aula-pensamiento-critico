@@ -26,10 +26,11 @@
 </details>
 
 <div class="filters">
-  <a href="/muro" class="filter <%= !filter ? 'is-active' : '' %>">Todo</a>
+  <a href="/muro" class="filter <%= (!filter && !onlyFeatured) ? 'is-active' : '' %>">Todo</a>
   <% Object.keys(postTypes).forEach(function(k){ %>
     <a href="/muro?tipo=<%= k %>" class="filter <%= filter === k ? 'is-active' : '' %>"><%= postTypes[k] %></a>
   <% }) %>
+  <a href="/muro?destacados=1" class="filter <%= onlyFeatured ? 'is-active' : '' %>">★ Destacados</a>
 </div>
 
 <% if (posts.length === 0) { %>
@@ -40,16 +41,27 @@
       <li class="wall-item" id="post-<%= p.id %>">
         <div class="wall-top">
           <span class="badge badge-<%= p.type %>"><%= postTypes[p.type] %></span>
+          <% if (p.featured) { %><span class="star" title="Destacado">★</span><% } %>
           <% if (p.title) { %><h3><%= p.title %></h3><% } %>
         </div>
         <p class="wall-body"><%= p.body %></p>
         <div class="wall-foot">
           <span class="meta"><%= p.author %> · <%= fmtDate(p.created_at) %></span>
-          <% if (p.user_id === currentUser.id || currentUser.role === 'admin') { %>
-            <form action="/muro/<%= p.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar esta publicación?')">
-              <button class="link-btn danger">Eliminar</button>
+          <div class="wall-actions">
+            <form action="/muro/<%= p.id %>/reaccion<%= onlyFeatured ? '?destacados=1' : '' %>" method="post">
+              <button class="react-btn <%= p.reacted ? 'is-on' : '' %>" type="submit" title="Marcar como útil">👍 Útil<%= p.reactions ? ' · ' + p.reactions : '' %></button>
             </form>
-          <% } %>
+            <% if (currentUser.role === 'admin') { %>
+              <form action="/muro/<%= p.id %>/destacar" method="post">
+                <button class="link-btn" type="submit"><%= p.featured ? 'Quitar ★' : 'Destacar ★' %></button>
+              </form>
+            <% } %>
+            <% if (p.user_id === currentUser.id || currentUser.role === 'admin') { %>
+              <form action="/muro/<%= p.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar esta publicación?')">
+                <button class="link-btn danger">Eliminar</button>
+              </form>
+            <% } %>
+          </div>
         </div>
 
         <div class="comments">
