@@ -31,7 +31,7 @@ const q = {
     'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)'
   ),
   countUsers: db.prepare('SELECT COUNT(*) AS n FROM users'),
-  listUsers: db.prepare('SELECT id, name, email, role, bio, created_at FROM users ORDER BY created_at ASC'),
+  listUsers: db.prepare('SELECT id, name, email, role, bio, avatar, created_at FROM users ORDER BY created_at ASC'),
   updateBio: db.prepare('UPDATE users SET bio = ? WHERE id = ?'),
 
   insertMaterial: db.prepare(
@@ -417,7 +417,7 @@ app.use((req, res, next) => {
     if (!fresh) {
       return req.session.destroy(() => res.redirect('/login'));
     }
-    req.session.user = { id: fresh.id, name: fresh.name, email: fresh.email, role: fresh.role };
+    req.session.user = { id: fresh.id, name: fresh.name, email: fresh.email, role: fresh.role, avatar: fresh.avatar };
   }
   res.locals.siteName = getSetting('site_name');
   res.locals.currentUser = req.session.user || null;
@@ -903,11 +903,65 @@ app.get('/participantes', requireAuth, (req, res) => {
   });
 });
 
-app.post('/perfil', requireAuth, (req, res) => {
+// ---- Cuenta del propio usuario ----
+app.get('/cuenta', requireAuth, (req, res) => {
+  const me = q.userById.get(req.session.user.id);
+  res.render('cuenta', { title: 'Mi cuenta', active: 'cuenta', me });
+});
+
+app.post('/cuenta/perfil', requireAuth, (req, res) => {
+  const name = String(req.body.name || '').trim();
   const bio = String(req.body.bio || '').trim().slice(0, 500);
-  q.updateBio.run(bio || null, req.session.user.id);
-  flash(req, 'success', 'Tu presentación se ha guardado.');
-  res.redirect('/participantes');
+  if (name.length < 2) {
+    flash(req, 'error', 'El nombre no puede quedar vacío.');
+    return res.redirect('/cuenta');
+  }
+  q.updateProfile.run(name, bio || null, req.session.user.id);
+  flash(req, 'success', 'Perfil actualizado.');
+  res.redirect('/cuenta');
+});
+
+app.post('/cuenta/password', requireAuth, (req, res) => {
+  const current = String(req.body.current || '');
+  const next = String(req.body.password || '');
+  const me = q.userById.get(req.session.user.id);
+  if (!bcrypt.compareSync(current, me.password_hash)) {
+    flash(req, 'error', 'La contraseña actual no es correcta.');
+    return res.redirect('/cuenta');
+  }
+  if (next.length < 6) {
+    flash(req, 'error', 'La nueva contraseña debe tener al menos 6 caracteres.');
+    return res.redirect('/cuenta');
+  }
+  q.updateUserPassword.run(bcrypt.hashSync(next, 10), me.id);
+  flash(req, 'success', 'Contraseña cambiada.');
+  res.redirect('/cuenta');
+});
+
+app.post('/cuenta/avatar', requireAuth, upload.single('avatar'), (req, res) => {
+  if (!req.file) {
+    flash(req, 'error', 'Elige una imagen.');
+    return res.redirect('/cuenta');
+  }
+  const ext = path.extname(req.file.filename).toLowerCase();
+  if (!['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+    fs.rmSync(req.file.path, { force: true });
+    flash(req, 'error', 'El avatar debe ser una imagen (JPG, PNG, GIF o WEBP).');
+    return res.redirect('/cuenta');
+  }
+  const me = q.userById.get(req.session.user.id);
+  if (me.avatar) fs.rmSync(path.join(UPLOAD_DIR, me.avatar), { force: true });
+  q.updateAvatar.run(req.file.filename, me.id);
+  flash(req, 'success', 'Avatar actualizado.');
+  res.redirect('/cuenta');
+});
+
+app.post('/cuenta/avatar/quitar', requireAuth, (req, res) => {
+  const me = q.userById.get(req.session.user.id);
+  if (me.avatar) fs.rmSync(path.join(UPLOAD_DIR, me.avatar), { force: true });
+  q.updateAvatar.run(null, me.id);
+  flash(req, 'success', 'Avatar eliminado.');
+  res.redirect('/cuenta');
 });
 
 // ---- Actividad rediseñada (la construyen los participantes) ----

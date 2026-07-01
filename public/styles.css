@@ -318,7 +318,23 @@ a:hover { text-decoration: underline; }
   background: var(--accent); color: #fff; font-family: var(--serif); font-weight: 600;
   font-size: 20px; display: flex; align-items: center; justify-content: center;
 }
+.avatar-img { padding: 0; overflow: hidden; }
+.avatar-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .person-body { flex: 1; min-width: 0; }
+
+/* Avatar pequeño en la barra superior */
+.nav-user .who { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-soft); }
+.nav-user .who:hover { text-decoration: none; color: var(--ink); }
+.nav-user .who .avatar { width: 26px; height: 26px; font-size: 12px; }
+
+/* Página Mi cuenta */
+.account-avatar { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; }
+.account-avatar .avatar { width: 72px; height: 72px; font-size: 30px; }
+.avatar-form { display: inline; }
+.avatar-pick { cursor: pointer; }
+.account-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+.account-h { font-family: var(--serif); font-weight: 600; font-size: 20px; margin: 0 0 14px; }
+.account-cols .form input[disabled] { background: var(--paper); color: var(--ink-soft); }
 .person-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .person-bio { margin: 2px 0 6px; }
 .person-bio.muted { color: var(--ink-soft); font-style: italic; }
@@ -552,6 +568,8 @@ a:hover { text-decoration: underline; }
 /* ---- Responsive ---- */
 @media (max-width: 680px) {
   .cols { grid-template-columns: 1fr; }
+  .account-cols { grid-template-columns: 1fr; }
+  .course-facts { grid-template-columns: 1fr; }
   .cards { grid-template-columns: 1fr; }
   .form .row { flex-direction: column; }
   .hero-title { font-size: 32px; }

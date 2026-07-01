@@ -1,0 +1,53 @@
+<div class="page-head">
+  <h1>Mi cuenta</h1>
+  <p>Ajusta tu nombre, tu presentación, tu contraseña y tu avatar.</p>
+</div>
+
+<section class="account-avatar">
+  <%- include('partials/avatar', { u: me }) %>
+  <div>
+    <form action="/cuenta/avatar" method="post" enctype="multipart/form-data" class="avatar-form">
+      <label class="btn btn-ghost btn-sm avatar-pick">
+        Cambiar avatar
+        <input type="file" name="avatar" accept="image/*" hidden onchange="this.form.submit()">
+      </label>
+    </form>
+    <% if (me.avatar) { %>
+      <form action="/cuenta/avatar/quitar" method="post" style="display:inline">
+        <button class="link-btn danger">Quitar</button>
+      </form>
+    <% } %>
+    <p class="hint">Una imagen cuadrada queda mejor.</p>
+  </div>
+</section>
+
+<div class="account-cols">
+  <section class="admin-card">
+    <h2 class="account-h">Perfil</h2>
+    <form action="/cuenta/perfil" method="post" class="form">
+      <label>Nombre
+        <input type="text" name="name" value="<%= me.name %>" required>
+      </label>
+      <label>Email <span class="hint">(no se puede cambiar)</span>
+        <input type="email" value="<%= me.email %>" disabled>
+      </label>
+      <label>Sobre ti <span class="hint">(máx. 500)</span>
+        <textarea name="bio" rows="3" maxlength="500" placeholder="Quién eres o qué te trae al curso."><%= me.bio || '' %></textarea>
+      </label>
+      <button class="btn btn-primary btn-sm" type="submit">Guardar perfil</button>
+    </form>
+  </section>
+
+  <section class="admin-card">
+    <h2 class="account-h">Contraseña</h2>
+    <form action="/cuenta/password" method="post" class="form">
+      <label>Contraseña actual
+        <input type="password" name="current" required autocomplete="current-password">
+      </label>
+      <label>Nueva contraseña <span class="hint">(mín. 6)</span>
+        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+      </label>
+      <button class="btn btn-primary btn-sm" type="submit">Cambiar contraseña</button>
+    </form>
+  </section>
+</div>

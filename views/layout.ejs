@@ -28,7 +28,11 @@
         <% } %>
       </nav>
       <div class="nav-user">
-        <span class="who"><%= currentUser.name %><% if (currentUser.role === 'admin') { %> <span class="tag-admin">admin</span><% } %></span>
+        <a class="who" href="/cuenta" title="Mi cuenta">
+          <%- include('partials/avatar', { u: currentUser }) %>
+          <span><%= currentUser.name %></span>
+          <% if (currentUser.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
+        </a>
         <form action="/logout" method="post"><button class="link-btn">Salir</button></form>
       </div>
     </div>

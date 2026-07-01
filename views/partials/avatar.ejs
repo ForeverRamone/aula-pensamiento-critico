@@ -1,0 +1,5 @@
+<% if (u.avatar) { %>
+  <span class="avatar avatar-img"><img src="/uploads/<%= u.avatar %>" alt="<%= u.name %>"></span>
+<% } else { %>
+  <span class="avatar"><%= u.name.trim().charAt(0).toUpperCase() %></span>
+<% } %>

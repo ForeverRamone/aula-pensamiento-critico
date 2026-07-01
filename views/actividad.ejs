@@ -28,7 +28,7 @@
 <ul class="people">
   <% participants.forEach(function(u){ %>
     <li class="person">
-      <div class="avatar"><%= u.name.trim().charAt(0).toUpperCase() %></div>
+      <%- include('partials/avatar', { u: u }) %>
       <div class="person-body">
         <div class="person-head">
           <strong><%= u.name %></strong>
