@@ -33,6 +33,7 @@
           <span><%= currentUser.name %></span>
           <% if (currentUser.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
         </a>
+        <button type="button" class="info-btn" onclick="document.getElementById('info-modal').showModal()">ⓘ Info</button>
         <form action="/logout" method="post"><button class="link-btn">Salir</button></form>
       </div>
     </div>
@@ -50,5 +51,35 @@
       <p><%= siteName %> · un espacio del grupo, para el grupo.</p>
     </div>
   </footer>
+
+  <dialog id="info-modal" class="info-modal">
+    <div class="info-head">
+      <h2>¿Para qué sirve esta web?</h2>
+      <button type="button" class="info-close" onclick="document.getElementById('info-modal').close()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="info-body">
+      <p>Este es el <strong>espacio en línea del curso</strong> «<%= course.name %>». Un lugar tranquilo y privado —solo para el grupo— donde tener a mano todo lo del curso y trabajar juntos, sin el ruido de otras plataformas.</p>
+      <p>Como participante, esto es lo que puedes hacer:</p>
+      <ul class="info-list">
+        <li><strong>El curso</strong> — consultar la agenda: qué toca cada sesión y cuánto falta para la entrega final.</li>
+        <li><strong>Materiales</strong> — ver las lecturas, presentaciones y enlaces, ordenados por sesión. Los PDF se leen y se descargan; las presentaciones se consultan dentro de la web.</li>
+        <li><strong>Muro</strong> — compartir prompts que funcionan, ideas, recursos y preguntas; comentar los de los demás y marcarlos como «útil».</li>
+        <li><strong>Actividad</strong> — construir tu <em>actividad final rediseñada</em> en cinco apartados, adjuntar archivos o enlaces, marcarla como finalizada y guardarla en PDF. Aquí recibirás el feedback y el resultado (Apto / No apto).</li>
+        <li><strong>Participantes</strong> — ver quién forma el grupo y su presentación.</li>
+        <li><strong>Mi cuenta</strong> — cambiar tu nombre, tu contraseña y tu avatar cuando quieras.</li>
+      </ul>
+      <p class="info-foot">En resumen: aquí guardamos los materiales, pensamos en voz alta entre todos y preparamos la actividad con la que se certifica el curso.</p>
+    </div>
+    <div class="info-actions">
+      <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('info-modal').close()">Entendido</button>
+    </div>
+  </dialog>
+  <script>
+    // Cerrar la ventana de info al pulsar fuera (en el fondo oscurecido).
+    (function () {
+      var m = document.getElementById('info-modal');
+      if (m) m.addEventListener('click', function (e) { if (e.target === m) m.close(); });
+    })();
+  </script>
 </body>
 </html>

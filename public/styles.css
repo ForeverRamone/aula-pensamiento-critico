@@ -66,6 +66,37 @@ a:hover { text-decoration: underline; }
 .link-btn:hover { color: var(--ink); text-decoration: underline; }
 .link-btn.danger { color: var(--danger); }
 
+.info-btn {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 12px; color: var(--accent-dark);
+}
+.info-btn:hover { border-color: var(--accent); background: rgba(178,83,52,.06); }
+
+/* ---- Ventana de información ---- */
+.info-modal {
+  width: min(560px, calc(100vw - 32px)); max-height: 85vh; overflow: auto;
+  border: 1px solid var(--line); border-radius: 16px; padding: 0;
+  background: var(--paper-2); color: var(--ink); box-shadow: 0 20px 60px rgba(40,30,20,.25);
+}
+.info-modal::backdrop { background: rgba(36,31,26,.5); }
+.info-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 20px 24px 12px;
+}
+.info-head h2 { font-family: var(--serif); font-weight: 600; font-size: 22px; margin: 0; }
+.info-close {
+  border: none; background: none; cursor: pointer; font-size: 18px; color: var(--ink-soft);
+  line-height: 1; padding: 4px;
+}
+.info-close:hover { color: var(--ink); }
+.info-body { padding: 0 24px; }
+.info-body p { margin: 0 0 12px; }
+.info-list { margin: 0 0 14px; padding-left: 20px; }
+.info-list li { margin: 8px 0; }
+.info-foot { color: var(--ink-soft); font-style: italic; }
+.info-actions { padding: 8px 24px 22px; text-align: right; }
+
 /* ---- Estructura ---- */
 .main { padding: 40px 20px 60px; }
 .site-footer {
