@@ -5,16 +5,26 @@ services:
     container_name: aula-pensamiento-critico
     restart: unless-stopped
     ports:
-      # Izquierda = puerto en el Synology; derecha = puerto interno (no lo cambies).
-      - "8080:3000"
+      # HOST_PORT = puerto en el Synology (cámbialo si el 8080 está ocupado).
+      # El 3000 de la derecha es el interno: no lo toques.
+      - "${HOST_PORT:-8080}:3000"
     volumes:
-      # Aquí se guardan la base de datos y los archivos subidos.
-      - ./data:/data
+      # Volumen con nombre: aquí viven la base de datos y los archivos subidos.
+      # Sobrevive a reinicios y actualizaciones del contenedor.
+      - aula-data:/data
     environment:
-      - SITE_NAME=Del ChatGPT al pensamiento crítico
-      # Código que repartes a los participantes para que se registren. CÁMBIALO.
-      - INVITE_CODE=cambia-este-codigo
+      # Estas variables las puedes fijar desde Portainer (sección "Environment
+      # variables") o desde un archivo .env. Si no las defines, se usan los
+      # valores por defecto de la derecha (que DEBES cambiar antes de usarlo).
+      - SITE_NAME=${SITE_NAME:-Del ChatGPT al pensamiento crítico}
+      # Código que repartes a los participantes para registrarse. CÁMBIALO.
+      - INVITE_CODE=${INVITE_CODE:-cambia-este-codigo}
       # Tu email: quedará como administrador al registrarte. PON EL TUYO.
-      - ADMIN_EMAIL=tu-email@ejemplo.com
-      # IMPORTANTE: cámbialo por una frase larga y secreta cualquiera.
-      - SESSION_SECRET=cambia-esto-por-una-frase-larga-y-secreta
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-tu-email@ejemplo.com}
+      # Frase larga y secreta para firmar las sesiones. CÁMBIALA.
+      - SESSION_SECRET=${SESSION_SECRET:-cambia-esto-por-una-frase-larga-y-secreta}
+      # Número de sesiones del curso (por defecto 5).
+      - NUM_SESSIONS=${NUM_SESSIONS:-5}
+
+volumes:
+  aula-data:

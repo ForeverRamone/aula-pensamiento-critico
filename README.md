@@ -38,26 +38,55 @@ No necesita base de datos externa ni compilar nada: usa el SQLite integrado en N
 > El número de sesiones (5 por defecto) se puede cambiar con la variable
 > `NUM_SESSIONS`.
 
-Todo se guarda en la carpeta `data/` (base de datos + archivos). Haz copia de esa
-carpeta y tendrás una copia de seguridad completa.
+Todo se guarda en el volumen `aula-data` (base de datos + archivos subidos).
 
 ---
 
-## Ponerla en marcha en el Synology (Container Manager)
+## Desplegar desde GitHub
 
-1. Copia esta carpeta al Synology (por ejemplo a `/volume1/docker/aula`).
-2. Abre **Container Manager → Proyecto → Crear**, elige esta carpeta y su
+El repositorio es: **https://github.com/ForeverRamone/aula-pensamiento-critico**
+
+Antes de nada, ten a mano tres valores que vas a definir tú:
+
+| Variable         | Qué poner                                              |
+|------------------|--------------------------------------------------------|
+| `INVITE_CODE`    | El código que repartirás a los participantes.          |
+| `ADMIN_EMAIL`    | Tu email (quedará como administrador al registrarte).  |
+| `SESSION_SECRET` | Una frase larga e inventada (cuanto más rara, mejor).  |
+
+### Opción A · Portainer (Stack desde el repositorio)
+
+1. **Stacks → Add stack**.
+2. Nombre: `aula`. Build method: **Repository**.
+3. Repository URL: `https://github.com/ForeverRamone/aula-pensamiento-critico`
+4. Repository reference: `refs/heads/main` · Compose path: `docker-compose.yml`
+5. En **Environment variables**, añade `INVITE_CODE`, `ADMIN_EMAIL` y
+   `SESSION_SECRET` (y `HOST_PORT` si quieres otro puerto que el 8080).
+6. **Deploy the stack**. Portainer clona el repo, construye la imagen (la primera
+   vez tarda: instala LibreOffice) y arranca el contenedor.
+
+### Opción B · Synology DSM (Container Manager)
+
+1. Descarga el repo como ZIP desde GitHub (botón **Code → Download ZIP**) y
+   descomprímelo en una carpeta del NAS, p. ej. `/volume1/docker/aula`.
+2. **Container Manager → Proyecto → Crear**, elige esa carpeta y su
    `docker-compose.yml`.
-3. Antes de arrancar, edita en `docker-compose.yml`:
-   - `INVITE_CODE`: el código que darás a los participantes.
-   - `SESSION_SECRET`: cámbialo por una frase larga e inventada.
-   - El puerto `8080` de la izquierda si ya lo usas para otra cosa.
-4. Arranca el proyecto. La web quedará en `http://IP-DEL-SYNOLOGY:8080`.
-5. Entra tú primero en `/register` con **tu** email (el de `ADMIN_EMAIL`) para
-   quedar como administrador, y reparte el código de invitación al grupo.
+3. Antes de arrancar, define las variables (`INVITE_CODE`, `ADMIN_EMAIL`,
+   `SESSION_SECRET`) en el paso de entorno, o crea un archivo `.env` en la misma
+   carpeta con esos valores.
+4. Arranca el proyecto.
 
-> Para acceder desde fuera de casa y con `https://`, lo habitual es publicarla con
-> el **proxy inverso** de DSM y un certificado. Te lo monto cuando lleguemos a ese paso.
+### Después de desplegar (ambos casos)
+
+- Abre `http://IP-DEL-SYNOLOGY:8080`.
+- Regístrate **tú primero** en `/register` con el email de `ADMIN_EMAIL`: quedarás
+  como administrador. Reparte el `INVITE_CODE` al grupo.
+
+> **Copia de seguridad:** los datos viven en el volumen `aula-data`. Para
+> respaldarlos: `docker run --rm -v aula-data:/data -v $(pwd):/backup alpine tar czf /backup/aula-backup.tar.gz -C /data .`
+
+> **Acceso con `https://` desde fuera:** se hace con el **proxy inverso** de DSM y
+> un certificado. Te lo monto cuando lleguemos a ese paso.
 
 ---
 
