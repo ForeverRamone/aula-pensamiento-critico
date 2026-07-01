@@ -24,7 +24,7 @@
           <span class="step-tag"><%= p.tag %></span>
         </div>
       </div>
-      <% if (body) { %><p class="read-body"><%= body %></p><% } %>
+      <% if (body) { %><div class="read-body rich-text"><%- body %></div><% } %>
       <% if (files.length) { %>
         <ul class="attach-list">
           <% files.forEach(function(f){ %>

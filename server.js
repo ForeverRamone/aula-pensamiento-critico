@@ -10,6 +10,7 @@ const session = require('express-session');
 const expressLayouts = require('express-ejs-layouts');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
+const sanitizeHtml = require('sanitize-html');
 
 const { db, UPLOAD_DIR } = require('./db');
 const SqliteStore = require('./sessionStore');
@@ -228,6 +229,32 @@ function googleEmbed(url) {
     return `https://drive.google.com/file/d/${m[1]}/preview`;
   }
   return null;
+}
+
+// Limpia el HTML del editor de texto enriquecido: conserva formato básico
+// (negrita, cursiva, subrayado, listas, enlaces) y elimina cualquier cosa
+// peligrosa (scripts, estilos raros, etc.). Sirve también para depurar el
+// HTML sucio que llega al pegar desde Word.
+function cleanHtml(dirty) {
+  const clean = sanitizeHtml(String(dirty || ''), {
+    allowedTags: ['b', 'strong', 'i', 'em', 'u', 's', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h3', 'h4', 'blockquote', 'span', 'div'],
+    allowedAttributes: { a: ['href', 'target', 'rel'] },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedStyles: {
+      '*': {
+        'text-decoration': [/^underline$/, /^line-through$/],
+        'font-weight': [/^bold$/, /^[5-9]00$/],
+        'font-style': [/^italic$/],
+      },
+    },
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer', target: '_blank' }),
+    },
+  }).trim();
+  // Si al quitar las etiquetas no queda texto (ni listas ni enlaces), es vacío.
+  const plain = clean.replace(/<[^>]*>/g, '').trim();
+  if (!plain && !/<(li|a|img)\b/i.test(clean)) return null;
+  return clean;
 }
 
 const POST_TYPES = {
@@ -625,8 +652,8 @@ app.post('/actividad/titulo', requireAuth, (req, res) => {
 app.post('/actividad/texto', requireAuth, (req, res) => {
   const part = req.body.part;
   if (!ACTIVITY_PART_KEYS.includes(part)) return res.redirect('/actividad/mia');
-  const body = String(req.body.body || '').trim();
-  q.upsertText.run(req.session.user.id, part, body || null);
+  const body = cleanHtml(req.body.body);
+  q.upsertText.run(req.session.user.id, part, body);
   q.touchSubmission.run(req.session.user.id);
   flash(req, 'success', 'Apartado guardado.');
   res.redirect('/actividad/mia#' + part);

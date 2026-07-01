@@ -26,7 +26,17 @@
 
     <form action="/actividad/texto" method="post" class="form">
       <input type="hidden" name="part" value="<%= p.key %>">
-      <textarea name="body" rows="5" placeholder="Escribe aquí tu <%= p.label.toLowerCase() %>…"><%= texts[p.key] || '' %></textarea>
+      <div class="rte">
+        <div class="rte-toolbar">
+          <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Subrayado"><span style="text-decoration:underline">U</span></button>
+          <button type="button" data-cmd="insertUnorderedList" title="Lista con viñetas">•&nbsp;Lista</button>
+          <button type="button" data-cmd="insertOrderedList" title="Lista numerada">1.&nbsp;Lista</button>
+        </div>
+        <div class="rte-area" contenteditable="true" data-placeholder="Escribe aquí… (puedes pegar desde Word y conserva el formato)"><%- texts[p.key] || '' %></div>
+        <input type="hidden" name="body" value="">
+      </div>
       <button class="btn btn-primary btn-sm" type="submit">Guardar apartado</button>
     </form>
 
@@ -67,3 +77,5 @@
     </details>
   </section>
 <% }) %>
+
+<script src="/public/editor.js"></script>
