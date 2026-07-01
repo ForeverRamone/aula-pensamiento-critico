@@ -1,0 +1,19 @@
+<%
+// Botones de un adjunto según su tipo. Espera: item (con file_kind, file_path,
+// file_name, slide_count, url, embed_url) y viewerBase (p. ej. "/materiales").
+%>
+<div class="card-links">
+  <% if (item.file_kind === 'pdf') { %>
+    <a class="chip chip-view" href="<%= viewerBase %>/<%= item.id %>/ver">▤ Ver PDF</a>
+    <a class="chip" href="/uploads/<%= item.file_path %>" download="<%= item.file_name %>">⬇ Descargar</a>
+  <% } else if (item.file_kind === 'slides') { %>
+    <a class="chip chip-view" href="<%= viewerBase %>/<%= item.id %>/ver">▤ Ver presentación (<%= item.slide_count %>)</a>
+    <span class="chip chip-muted" title="Solo consulta">consulta en la web</span>
+  <% } else if (item.file_kind === 'embed') { %>
+    <a class="chip chip-view" href="<%= viewerBase %>/<%= item.id %>/ver">▤ Ver diapositivas</a>
+    <% if (item.url) { %><a class="chip" href="<%= item.url %>" target="_blank" rel="noopener">↗ Abrir en Google</a><% } %>
+  <% } else if (item.file_kind === 'file') { %>
+    <a class="chip" href="/uploads/<%= item.file_path %>" download="<%= item.file_name %>">⬇ <%= item.file_name %></a>
+  <% } %>
+  <% if (item.file_kind !== 'embed' && item.url) { %><a class="chip" href="<%= item.url %>" target="_blank" rel="noopener">↗ Enlace</a><% } %>
+</div>

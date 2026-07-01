@@ -1,0 +1,82 @@
+<div class="page-head">
+  <h1>Materiales del curso</h1>
+  <p>Ordenados por sesión, y dentro de cada una, el material del curso y el material adicional. Los PDF se pueden ver y descargar; las presentaciones solo se consultan dentro de la web.</p>
+</div>
+
+<% if (currentUser.role === 'admin') { %>
+<details class="composer" <%= total === 0 ? 'open' : '' %>>
+  <summary>+ Añadir material</summary>
+  <form action="/materiales" method="post" enctype="multipart/form-data" class="form">
+    <div class="row">
+      <label>Sesión
+        <select name="session">
+          <% for (let s = 1; s <= numSessions; s++) { %>
+            <option value="<%= s %>">Sesión <%= s %></option>
+          <% } %>
+          <option value="0">General (sin sesión)</option>
+        </select>
+      </label>
+      <label>Categoría
+        <select name="kind">
+          <% Object.keys(materialKinds).forEach(function(k){ %>
+            <option value="<%= k %>"><%= materialKinds[k] %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+    <label>Título
+      <input type="text" name="title" required placeholder="p. ej. Presentación de la sesión 1">
+    </label>
+    <label>Descripción <span class="hint">(opcional)</span>
+      <textarea name="description" rows="2" placeholder="Un par de líneas sobre qué es y por qué importa."></textarea>
+    </label>
+    <div class="row">
+      <label>Enlace <span class="hint">(web, o Google Slides/Drive para verlo dentro)</span>
+        <input type="text" name="url" placeholder="https://… o enlace de Google Slides/Drive">
+      </label>
+      <label>Archivo <span class="hint">(PDF: se ve y se descarga · PPTX: solo se ve)</span>
+        <input type="file" name="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png">
+      </label>
+    </div>
+    <button class="btn btn-primary" type="submit">Añadir material</button>
+  </form>
+</details>
+<% } %>
+
+<%
+  // Dibuja una tarjeta de material con los botones correctos según su tipo.
+  function materialCard(m) { %>
+    <li class="card">
+      <div class="card-body">
+        <h3><%= m.title %></h3>
+        <% if (m.description) { %><p class="card-desc"><%= m.description %></p><% } %>
+        <%- include('partials/filechips', { item: m, viewerBase: '/materiales' }) %>
+      </div>
+      <div class="card-foot">
+        <span class="meta">por <%= m.author %> · <%= fmtDate(m.created_at) %></span>
+        <% if (m.user_id === currentUser.id || currentUser.role === 'admin') { %>
+          <form action="/materiales/<%= m.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este material?')">
+            <button class="link-btn danger">Eliminar</button>
+          </form>
+        <% } %>
+      </div>
+    </li>
+<% } %>
+
+<% if (total === 0) { %>
+  <p class="empty big">Todavía no hay materiales publicados. Pronto aparecerán aquí.</p>
+<% } else { %>
+  <% groups.forEach(function(g){ %>
+    <section class="session-group">
+      <h2 class="session-title"><%= g.label %></h2>
+      <% Object.keys(materialKinds).forEach(function(k){
+           var items = g.items.filter(function(m){ return m.kind === k; });
+           if (!items.length) return; %>
+        <h3 class="kind-title"><%= materialKinds[k] %></h3>
+        <ul class="cards">
+          <% items.forEach(function(m){ materialCard(m); }) %>
+        </ul>
+      <% }) %>
+    </section>
+  <% }) %>
+<% } %>

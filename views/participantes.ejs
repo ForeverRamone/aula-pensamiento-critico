@@ -1,0 +1,36 @@
+<div class="page-head">
+  <h1>Participantes</h1>
+  <p>Quiénes formamos el grupo. Cuéntanos en una línea quién eres o qué te trae al curso.</p>
+</div>
+
+<% const me = users.find(function(u){ return u.id === currentUser.id; }); %>
+<details class="composer" <%= (me && me.bio) ? '' : 'open' %>>
+  <summary>Tu presentación</summary>
+  <form action="/perfil" method="post" class="form">
+    <label>Sobre ti <span class="hint">(máx. 500 caracteres)</span>
+      <textarea name="bio" rows="3" maxlength="500" placeholder="p. ej. Profe de secundaria, curiosa por cómo la IA cambia el pensar."><%= me && me.bio ? me.bio : '' %></textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </form>
+</details>
+
+<ul class="people">
+  <% users.forEach(function(u){ %>
+    <li class="person">
+      <div class="avatar"><%= u.name.trim().charAt(0).toUpperCase() %></div>
+      <div class="person-body">
+        <div class="person-head">
+          <strong><%= u.name %></strong>
+          <% if (u.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
+          <% if (u.id === currentUser.id) { %><span class="tag-you">tú</span><% } %>
+        </div>
+        <% if (u.bio) { %>
+          <p class="person-bio"><%= u.bio %></p>
+        <% } else { %>
+          <p class="person-bio muted">Sin presentación todavía.</p>
+        <% } %>
+        <span class="meta">En el curso desde <%= fmtDate(u.created_at) %></span>
+      </div>
+    </li>
+  <% }) %>
+</ul>

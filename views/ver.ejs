@@ -1,0 +1,31 @@
+<div class="viewer-head">
+  <a class="back" href="<%= backUrl %>">← <%= backLabel %></a>
+  <h1><%= item.title %></h1>
+  <% if (item.description) { %><p class="viewer-desc"><%= item.description %></p><% } %>
+</div>
+
+<% if (item.file_kind === 'pdf') { %>
+  <div class="viewer-actions">
+    <a class="btn btn-ghost btn-sm" href="/uploads/<%= item.file_path %>" download="<%= item.file_name %>">⬇ Descargar PDF</a>
+  </div>
+  <iframe class="pdf-frame" src="/uploads/<%= item.file_path %>" title="<%= item.title %>"></iframe>
+
+<% } else if (item.file_kind === 'embed') { %>
+  <p class="viewer-note">Documento de Google en modo lector<% if (item.url) { %> · <a href="<%= item.url %>" target="_blank" rel="noopener">abrir en Google</a><% } %></p>
+  <iframe class="embed-frame" src="<%= item.embed_url %>" title="<%= item.title %>" allowfullscreen></iframe>
+
+<% } else if (item.file_kind === 'slides') { %>
+  <% if (slides.length === 0) { %>
+    <p class="empty big">No se han encontrado diapositivas para esta presentación.</p>
+  <% } else { %>
+    <p class="viewer-note">Presentación de <%= slides.length %> diapositivas · solo consulta</p>
+    <div class="slides">
+      <% slides.forEach(function(s, i){ %>
+        <figure class="slide">
+          <img src="/uploads/<%= item.file_path %>/<%= s %>" alt="Diapositiva <%= i + 1 %>" loading="lazy">
+          <figcaption><%= i + 1 %> / <%= slides.length %></figcaption>
+        </figure>
+      <% }) %>
+    </div>
+  <% } %>
+<% } %>

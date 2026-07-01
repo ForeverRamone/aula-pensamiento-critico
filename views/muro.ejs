@@ -1,0 +1,77 @@
+<div class="page-head">
+  <h1>Muro compartido</h1>
+  <p>Prompts que funcionan, ideas sueltas, recursos, preguntas para el grupo. Firma tuya, para que sepamos de quién viene.</p>
+</div>
+
+<details class="composer" open>
+  <summary>+ Compartir algo</summary>
+  <form action="/muro" method="post" class="form">
+    <div class="row">
+      <label>Tipo
+        <select name="type">
+          <% Object.keys(postTypes).forEach(function(k){ %>
+            <option value="<%= k %>"><%= postTypes[k] %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Título <span class="hint">(opcional)</span>
+        <input type="text" name="title" placeholder="Un titular breve">
+      </label>
+    </div>
+    <label>Contenido
+      <textarea name="body" rows="4" required placeholder="Escribe aquí tu prompt, idea o recurso…"></textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Publicar</button>
+  </form>
+</details>
+
+<div class="filters">
+  <a href="/muro" class="filter <%= !filter ? 'is-active' : '' %>">Todo</a>
+  <% Object.keys(postTypes).forEach(function(k){ %>
+    <a href="/muro?tipo=<%= k %>" class="filter <%= filter === k ? 'is-active' : '' %>"><%= postTypes[k] %></a>
+  <% }) %>
+</div>
+
+<% if (posts.length === 0) { %>
+  <p class="empty big">No hay nada por aquí todavía. Comparte lo primero.</p>
+<% } else { %>
+  <ul class="wall">
+    <% posts.forEach(function(p){ %>
+      <li class="wall-item" id="post-<%= p.id %>">
+        <div class="wall-top">
+          <span class="badge badge-<%= p.type %>"><%= postTypes[p.type] %></span>
+          <% if (p.title) { %><h3><%= p.title %></h3><% } %>
+        </div>
+        <p class="wall-body"><%= p.body %></p>
+        <div class="wall-foot">
+          <span class="meta"><%= p.author %> · <%= fmtDate(p.created_at) %></span>
+          <% if (p.user_id === currentUser.id || currentUser.role === 'admin') { %>
+            <form action="/muro/<%= p.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar esta publicación?')">
+              <button class="link-btn danger">Eliminar</button>
+            </form>
+          <% } %>
+        </div>
+
+        <div class="comments">
+          <% p.comments.forEach(function(c){ %>
+            <div class="comment">
+              <p class="comment-body"><%= c.body %></p>
+              <div class="comment-foot">
+                <span class="meta"><%= c.author %> · <%= fmtDate(c.created_at) %></span>
+                <% if (c.user_id === currentUser.id || currentUser.role === 'admin') { %>
+                  <form action="/muro/comment/<%= c.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este comentario?')">
+                    <button class="link-btn danger">Eliminar</button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+          <form action="/muro/<%= p.id %>/comment" method="post" class="comment-form">
+            <input type="text" name="body" placeholder="Escribe un comentario…" required>
+            <button class="btn btn-ghost btn-sm" type="submit">Responder</button>
+          </form>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

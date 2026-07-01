@@ -1,0 +1,20 @@
+<h2 class="auth-title">Crear cuenta</h2>
+<p class="auth-sub">Necesitas el código de invitación que ha compartido quien organiza el curso.</p>
+
+<form action="/register" method="post" class="form">
+  <label>Nombre y apellidos
+    <input type="text" name="name" required autocomplete="name" autofocus>
+  </label>
+  <label>Email
+    <input type="email" name="email" required autocomplete="email">
+  </label>
+  <label>Contraseña <span class="hint">(mínimo 6 caracteres)</span>
+    <input type="password" name="password" required minlength="6" autocomplete="new-password">
+  </label>
+  <label>Código de invitación
+    <input type="text" name="invite" required placeholder="el código que te han dado">
+  </label>
+  <button class="btn btn-primary" type="submit">Crear mi cuenta</button>
+</form>
+
+<p class="auth-alt">¿Ya tienes cuenta? <a href="/login">Entrar</a></p>

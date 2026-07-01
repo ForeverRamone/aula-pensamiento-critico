@@ -1,0 +1,69 @@
+<div class="page-head">
+  <a class="back" href="/actividad">← Volver a la actividad</a>
+  <h1>Mi actividad</h1>
+  <p>Rellena cada apartado a tu ritmo. Cada bloque se guarda por separado.</p>
+</div>
+
+<form action="/actividad/titulo" method="post" class="form title-form">
+  <label>Título de tu tarea <span class="hint">(la asignatura y la tarea que rediseñas)</span>
+    <div class="inline">
+      <input type="text" name="task_title" value="<%= sub && sub.task_title ? sub.task_title : '' %>" placeholder="p. ej. Comentario de texto · Historia 4º ESO">
+      <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
+    </div>
+  </label>
+</form>
+
+<% activityParts.forEach(function(p, i){ %>
+  <section class="activity-part" id="<%= p.key %>">
+    <div class="part-head">
+      <span class="step-n"><%= i + 1 %></span>
+      <div>
+        <h2><%= p.label %></h2>
+        <span class="step-tag"><%= p.tag %></span>
+      </div>
+    </div>
+    <p class="step-help"><%= p.help %></p>
+
+    <form action="/actividad/texto" method="post" class="form">
+      <input type="hidden" name="part" value="<%= p.key %>">
+      <textarea name="body" rows="5" placeholder="Escribe aquí tu <%= p.label.toLowerCase() %>…"><%= texts[p.key] || '' %></textarea>
+      <button class="btn btn-primary btn-sm" type="submit">Guardar apartado</button>
+    </form>
+
+    <% var files = filesByPart[p.key] || []; %>
+    <% if (files.length) { %>
+      <ul class="attach-list">
+        <% files.forEach(function(f){ %>
+          <li class="attach">
+            <div class="attach-body">
+              <% if (f.title) { %><strong><%= f.title %></strong><% } %>
+              <%- include('partials/filechips', { item: f, viewerBase: '/actividad/archivo' }) %>
+            </div>
+            <form action="/actividad/archivo/<%= f.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este adjunto?')">
+              <button class="link-btn danger">Eliminar</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <details class="composer">
+      <summary>+ Añadir archivo o enlace</summary>
+      <form action="/actividad/archivo" method="post" enctype="multipart/form-data" class="form">
+        <input type="hidden" name="part" value="<%= p.key %>">
+        <label>Título <span class="hint">(opcional)</span>
+          <input type="text" name="title" placeholder="p. ej. Captura de la respuesta de la IA">
+        </label>
+        <div class="row">
+          <label>Enlace <span class="hint">(web, o Google Slides/Drive)</span>
+            <input type="text" name="url" placeholder="https://… o enlace de Google">
+          </label>
+          <label>Archivo <span class="hint">(PDF, PPTX, imagen…)</span>
+            <input type="file" name="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png">
+          </label>
+        </div>
+        <button class="btn btn-primary btn-sm" type="submit">Añadir</button>
+      </form>
+    </details>
+  </section>
+<% }) %>

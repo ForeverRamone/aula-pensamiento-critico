@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · <%= siteName %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">✳</span>
+        <span class="brand-name"><%= siteName %></span>
+      </a>
+      <nav class="nav">
+        <a href="/" class="<%= active === 'inicio' ? 'is-active' : '' %>">Inicio</a>
+        <a href="/materiales" class="<%= active === 'materiales' ? 'is-active' : '' %>">Materiales</a>
+        <a href="/actividad" class="<%= active === 'actividad' ? 'is-active' : '' %>">Actividad</a>
+        <a href="/muro" class="<%= active === 'muro' ? 'is-active' : '' %>">Muro</a>
+        <a href="/participantes" class="<%= active === 'participantes' ? 'is-active' : '' %>">Participantes</a>
+      </nav>
+      <div class="nav-user">
+        <span class="who"><%= currentUser.name %><% if (currentUser.role === 'admin') { %> <span class="tag-admin">admin</span><% } %></span>
+        <form action="/logout" method="post"><button class="link-btn">Salir</button></form>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <% if (flash) { %>
+      <div class="flash flash-<%= flash.type %>"><%= flash.message %></div>
+    <% } %>
+    <%- body %>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><%= siteName %> · un espacio del grupo, para el grupo.</p>
+    </div>
+  </footer>
+</body>
+</html>

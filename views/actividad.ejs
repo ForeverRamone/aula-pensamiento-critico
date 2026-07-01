@@ -1,0 +1,48 @@
+<div class="page-head">
+  <h1>Actividad rediseñada</h1>
+  <p>La actividad final del curso: coge una tarea que ya pides a tu alumnado, comprueba cómo la IA la resuelve hoy saltándose el aprendizaje, y rediséñala para que siga enseñando en un aula donde la IA existe. Aquí construyes tu entrega, paso a paso, y puedes ver la de tus compañeros.</p>
+</div>
+
+<div class="cta-card">
+  <div>
+    <strong>Tu entrega</strong>
+    <p class="cta-sub">Ve rellenando los cinco apartados a lo largo de las sesiones. Se guarda solo, apartado por apartado.</p>
+  </div>
+  <a class="btn btn-primary" href="/actividad/mia">Editar mi actividad →</a>
+</div>
+
+<ol class="steps">
+  <% activityParts.forEach(function(p, i){ %>
+    <li class="step">
+      <span class="step-n"><%= i + 1 %></span>
+      <div>
+        <strong><%= p.label %></strong>
+        <span class="step-tag"><%= p.tag %></span>
+        <p class="step-help"><%= p.help %></p>
+      </div>
+    </li>
+  <% }) %>
+</ol>
+
+<h2 class="section-h">Entregas del grupo</h2>
+<ul class="people">
+  <% participants.forEach(function(u){ %>
+    <li class="person">
+      <div class="avatar"><%= u.name.trim().charAt(0).toUpperCase() %></div>
+      <div class="person-body">
+        <div class="person-head">
+          <strong><%= u.name %></strong>
+          <% if (u.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
+          <% if (u.id === currentUser.id) { %><span class="tag-you">tú</span><% } %>
+        </div>
+        <% if (u.task_title) { %>
+          <p class="person-bio">“<%= u.task_title %>”</p>
+        <% } else { %>
+          <p class="person-bio muted">Aún sin empezar.</p>
+        <% } %>
+        <% if (u.activity_updated) { %><span class="meta">Actualizada el <%= fmtDate(u.activity_updated) %></span><% } %>
+      </div>
+      <a class="chip" href="/actividad/u/<%= u.id %>">Ver</a>
+    </li>
+  <% }) %>
+</ul>

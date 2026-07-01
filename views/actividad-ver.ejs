@@ -1,0 +1,42 @@
+<div class="page-head">
+  <a class="back" href="/actividad">← Volver a la actividad</a>
+  <h1>Actividad de <%= participant.name %></h1>
+  <% if (sub && sub.task_title) { %><p class="viewer-desc">“<%= sub.task_title %>”</p><% } %>
+</div>
+
+<%
+  var hasAny = (sub && sub.task_title);
+  activityParts.forEach(function(p){ if (texts[p.key] || (filesByPart[p.key] || []).length) hasAny = true; });
+%>
+
+<% if (!hasAny) { %>
+  <p class="empty big"><%= participant.name.split(' ')[0] %> aún no ha empezado su actividad.</p>
+<% } else { %>
+  <% activityParts.forEach(function(p, i){
+       var body = texts[p.key];
+       var files = filesByPart[p.key] || [];
+       if (!body && !files.length) return; %>
+    <section class="activity-part">
+      <div class="part-head">
+        <span class="step-n"><%= i + 1 %></span>
+        <div>
+          <h2><%= p.label %></h2>
+          <span class="step-tag"><%= p.tag %></span>
+        </div>
+      </div>
+      <% if (body) { %><p class="read-body"><%= body %></p><% } %>
+      <% if (files.length) { %>
+        <ul class="attach-list">
+          <% files.forEach(function(f){ %>
+            <li class="attach">
+              <div class="attach-body">
+                <% if (f.title) { %><strong><%= f.title %></strong><% } %>
+                <%- include('partials/filechips', { item: f, viewerBase: '/actividad/archivo' }) %>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% }) %>
+<% } %>

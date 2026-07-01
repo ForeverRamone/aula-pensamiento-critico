@@ -1,0 +1,20 @@
+services:
+  aula:
+    build: .
+    image: aula-pensamiento-critico
+    container_name: aula-pensamiento-critico
+    restart: unless-stopped
+    ports:
+      # Izquierda = puerto en el Synology; derecha = puerto interno (no lo cambies).
+      - "8080:3000"
+    volumes:
+      # Aquí se guardan la base de datos y los archivos subidos.
+      - ./data:/data
+    environment:
+      - SITE_NAME=Del ChatGPT al pensamiento crítico
+      # Código que repartes a los participantes para que se registren. CÁMBIALO.
+      - INVITE_CODE=cambia-este-codigo
+      # Tu email: quedará como administrador al registrarte. PON EL TUYO.
+      - ADMIN_EMAIL=tu-email@ejemplo.com
+      # IMPORTANTE: cámbialo por una frase larga y secreta cualquiera.
+      - SESSION_SECRET=cambia-esto-por-una-frase-larga-y-secreta

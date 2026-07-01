@@ -1,0 +1,18 @@
+{
+  "name": "aula-pensamiento-critico",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Espacio colaborativo del curso 'Del ChatGPT al pensamiento crítico'",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.1"
+  }
+}

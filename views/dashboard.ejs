@@ -1,0 +1,55 @@
+<section class="hero">
+  <h1 class="hero-title">Hola, <%= currentUser.name.split(' ')[0] %>.</h1>
+  <p class="hero-lead">Este es el espacio del curso: un lugar tranquilo para guardar los materiales y para pensar en voz alta, entre todos.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="/materiales">Ver materiales</a>
+    <a class="btn btn-ghost" href="/muro">Ir al muro</a>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat"><span class="stat-n"><%= stats.materials %></span><span class="stat-l">materiales</span></div>
+  <div class="stat"><span class="stat-n"><%= stats.posts %></span><span class="stat-l">aportaciones</span></div>
+  <div class="stat"><span class="stat-n"><%= stats.users %></span><span class="stat-l">participantes</span></div>
+</section>
+
+<div class="cols">
+  <section class="col">
+    <div class="col-head">
+      <h2>Últimos materiales</h2>
+      <a href="/materiales" class="more">Ver todos →</a>
+    </div>
+    <% if (materials.length === 0) { %>
+      <p class="empty">Aún no hay materiales. <a href="/materiales">Sé el primero en añadir uno.</a></p>
+    <% } else { %>
+      <ul class="mini-list">
+        <% materials.forEach(function(m){ %>
+          <li>
+            <strong><%= m.title %></strong>
+            <span class="meta">por <%= m.author %> · <%= fmtDate(m.created_at) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="col">
+    <div class="col-head">
+      <h2>Últimas aportaciones</h2>
+      <a href="/muro" class="more">Ver el muro →</a>
+    </div>
+    <% if (posts.length === 0) { %>
+      <p class="empty">El muro está vacío. <a href="/muro">Comparte un prompt o una idea.</a></p>
+    <% } else { %>
+      <ul class="mini-list">
+        <% posts.forEach(function(p){ %>
+          <li>
+            <span class="badge badge-<%= p.type %>"><%= postTypes[p.type] %></span>
+            <strong><%= p.title || (p.body.length > 60 ? p.body.slice(0,60) + '…' : p.body) %></strong>
+            <span class="meta">por <%= p.author %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
