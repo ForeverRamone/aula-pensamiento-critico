@@ -1,0 +1,149 @@
+<div class="page-head">
+  <h1>Administración</h1>
+  <p>Control del espacio del curso: usuarios, contenido y ajustes. Solo tú (y quien hagas administrador) veis esta página.</p>
+</div>
+
+<nav class="admin-nav">
+  <a href="#resumen">Resumen</a>
+  <a href="#ajustes">Ajustes</a>
+  <a href="#usuarios">Usuarios</a>
+  <a href="#contenido">Contenido</a>
+</nav>
+
+<!-- ===== RESUMEN ===== -->
+<section id="resumen" class="admin-section">
+  <h2>Resumen</h2>
+  <div class="stats">
+    <div class="stat"><span class="stat-n"><%= stats.users %></span><span class="stat-l">usuarios</span></div>
+    <div class="stat"><span class="stat-n"><%= stats.materials %></span><span class="stat-l">materiales</span></div>
+    <div class="stat"><span class="stat-n"><%= stats.posts %></span><span class="stat-l">aportaciones</span></div>
+    <div class="stat"><span class="stat-n"><%= stats.comments %></span><span class="stat-l">comentarios</span></div>
+    <div class="stat"><span class="stat-n"><%= stats.submissions %></span><span class="stat-l">entregas</span></div>
+    <div class="stat"><span class="stat-n"><%= stats.storage %></span><span class="stat-l">en archivos</span></div>
+  </div>
+</section>
+
+<!-- ===== AJUSTES ===== -->
+<section id="ajustes" class="admin-section">
+  <h2>Ajustes del sitio</h2>
+  <p class="admin-help">Se aplican al momento, sin reiniciar nada.</p>
+  <form action="/admin/settings" method="post" class="form admin-card">
+    <label>Nombre del sitio
+      <input type="text" name="site_name" value="<%= settings.site_name %>">
+    </label>
+    <div class="row">
+      <label>Código de invitación
+        <input type="text" name="invite_code" value="<%= settings.invite_code %>">
+      </label>
+      <label>Número de sesiones del curso
+        <input type="number" name="num_sessions" min="1" max="20" value="<%= settings.num_sessions %>">
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" name="registration_open" value="1" <%= settings.registration_open ? 'checked' : '' %>>
+      <span>Registro abierto <span class="hint">(desmárcalo cuando el grupo ya esté dentro para que no entre nadie más)</span></span>
+    </label>
+    <button class="btn btn-primary btn-sm" type="submit">Guardar ajustes</button>
+  </form>
+</section>
+
+<!-- ===== USUARIOS ===== -->
+<section id="usuarios" class="admin-section">
+  <h2>Usuarios <span class="count-pill"><%= users.length %></span></h2>
+  <ul class="admin-users">
+    <% users.forEach(function(u){ %>
+      <li class="admin-user">
+        <div class="au-main">
+          <div class="au-id">
+            <strong><%= u.name %></strong>
+            <% if (u.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
+            <% if (u.id === currentUser.id) { %><span class="tag-you">tú</span><% } %>
+            <div class="au-email"><%= u.email %></div>
+          </div>
+          <div class="au-meta">
+            <span title="Apartados de la actividad rellenados">Actividad <%= u.parts %>/<%= activityParts.length %></span>
+            <span><%= u.posts %> aportaciones · <%= u.comments %> comentarios</span>
+            <span class="meta">Desde <%= fmtDate(u.created_at) %></span>
+          </div>
+        </div>
+        <% if (u.id !== currentUser.id) { %>
+          <div class="au-actions">
+            <form action="/admin/users/<%= u.id %>/role" method="post">
+              <button class="link-btn"><%= u.role === 'admin' ? 'Quitar admin' : 'Hacer admin' %></button>
+            </form>
+            <details class="au-pass">
+              <summary>Contraseña</summary>
+              <form action="/admin/users/<%= u.id %>/password" method="post" class="au-passform">
+                <input type="text" name="password" placeholder="nueva contraseña (mín. 6)" minlength="6" required>
+                <button class="btn btn-ghost btn-sm" type="submit">Cambiar</button>
+              </form>
+            </details>
+            <form action="/admin/users/<%= u.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar a <%= u.name %> y TODO su contenido? No se puede deshacer.')">
+              <button class="link-btn danger">Eliminar</button>
+            </form>
+          </div>
+        <% } else { %>
+          <div class="au-actions"><span class="meta">Tu cuenta</span></div>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<!-- ===== CONTENIDO ===== -->
+<section id="contenido" class="admin-section">
+  <h2>Contenido</h2>
+  <p class="admin-help">Todo lo publicado, para revisar y borrar lo que haga falta.</p>
+
+  <h3 class="mod-h">Materiales <span class="count-pill"><%= materials.length %></span></h3>
+  <% if (!materials.length) { %><p class="empty">Sin materiales.</p><% } else { %>
+    <ul class="mod-list">
+      <% materials.forEach(function(m){ %>
+        <li>
+          <div class="mod-body">
+            <strong><%= m.title %></strong>
+            <span class="meta"><%= sessionLabel(m.session) %> · <%= materialKinds[m.kind] || m.kind %> · <%= m.author %></span>
+          </div>
+          <form action="/admin/materiales/<%= m.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este material?')">
+            <button class="link-btn danger">Eliminar</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+  <h3 class="mod-h">Muro <span class="count-pill"><%= posts.length %></span></h3>
+  <% if (!posts.length) { %><p class="empty">Sin aportaciones.</p><% } else { %>
+    <ul class="mod-list">
+      <% posts.forEach(function(p){ %>
+        <li>
+          <div class="mod-body">
+            <span class="badge badge-<%= p.type %>"><%= postTypes[p.type] %></span>
+            <strong><%= p.title || (p.body.length > 70 ? p.body.slice(0,70) + '…' : p.body) %></strong>
+            <span class="meta"><%= p.author %> · <%= fmtDate(p.created_at) %></span>
+          </div>
+          <form action="/admin/muro/<%= p.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar esta aportación?')">
+            <button class="link-btn danger">Eliminar</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+  <h3 class="mod-h">Comentarios <span class="count-pill"><%= comments.length %></span></h3>
+  <% if (!comments.length) { %><p class="empty">Sin comentarios.</p><% } else { %>
+    <ul class="mod-list">
+      <% comments.forEach(function(c){ %>
+        <li>
+          <div class="mod-body">
+            <span><%= c.body.length > 90 ? c.body.slice(0,90) + '…' : c.body %></span>
+            <span class="meta"><%= c.author %> · <%= fmtDate(c.created_at) %></span>
+          </div>
+          <form action="/admin/comentario/<%= c.id %>/delete" method="post" onsubmit="return confirm('¿Eliminar este comentario?')">
+            <button class="link-btn danger">Eliminar</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

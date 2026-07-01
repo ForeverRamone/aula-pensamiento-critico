@@ -22,6 +22,9 @@
         <a href="/actividad" class="<%= active === 'actividad' ? 'is-active' : '' %>">Actividad</a>
         <a href="/muro" class="<%= active === 'muro' ? 'is-active' : '' %>">Muro</a>
         <a href="/participantes" class="<%= active === 'participantes' ? 'is-active' : '' %>">Participantes</a>
+        <% if (currentUser.role === 'admin') { %>
+          <a href="/admin" class="<%= active === 'admin' ? 'is-active' : '' %>">Admin</a>
+        <% } %>
       </nav>
       <div class="nav-user">
         <span class="who"><%= currentUser.name %><% if (currentUser.role === 'admin') { %> <span class="tag-admin">admin</span><% } %></span>

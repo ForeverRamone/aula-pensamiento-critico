@@ -381,6 +381,52 @@ a:hover { text-decoration: underline; }
 .rich-text { white-space: normal; }
 .rich-text a { color: var(--accent-dark); text-decoration: underline; }
 
+/* ---- Panel de administración ---- */
+.admin-nav {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px;
+  position: sticky; top: 66px; background: var(--paper); padding: 10px 0; z-index: 5;
+  border-bottom: 1px solid var(--line);
+}
+.admin-nav a {
+  font-size: 14px; font-weight: 500; color: var(--ink-soft);
+  padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper-2);
+}
+.admin-nav a:hover { border-color: var(--accent); color: var(--accent-dark); text-decoration: none; }
+
+.admin-section { margin-bottom: 40px; scroll-margin-top: 130px; }
+.admin-section > h2 {
+  font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 6px;
+}
+.admin-help { color: var(--ink-soft); margin: 0 0 16px; font-size: 15px; }
+.admin-card { background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); max-width: 640px; }
+.check { flex-direction: row !important; align-items: flex-start; gap: 10px !important; }
+.check input { width: auto; margin-top: 3px; }
+.count-pill { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink-soft); background: var(--paper-2); border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; vertical-align: middle; }
+
+.admin-users { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.admin-user {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; flex-wrap: wrap;
+}
+.au-main { display: flex; gap: 24px; align-items: center; flex: 1; min-width: 260px; flex-wrap: wrap; }
+.au-id { min-width: 200px; }
+.au-email { color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+.au-meta { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--ink-soft); }
+.au-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.au-pass > summary { cursor: pointer; font-size: 14px; color: var(--ink-soft); list-style: none; }
+.au-pass > summary:hover { color: var(--ink); }
+.au-passform { display: flex; gap: 8px; margin-top: 8px; }
+.au-passform input { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+
+.mod-h { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 24px 0 10px; }
+.mod-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mod-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+}
+.mod-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mod-body strong { font-weight: 600; }
+
 /* ---- Responsive ---- */
 @media (max-width: 680px) {
   .cols { grid-template-columns: 1fr; }

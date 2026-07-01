@@ -94,6 +94,28 @@ const q = {
      FROM users u LEFT JOIN submissions s ON s.user_id = u.id
      ORDER BY u.created_at ASC`
   ),
+
+  // ---- Administración ----
+  getSetting: db.prepare('SELECT value FROM settings WHERE key = ?'),
+  setSetting: db.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  ),
+  listUsersAdmin: db.prepare(
+    `SELECT u.id, u.name, u.email, u.role, u.created_at,
+            (SELECT COUNT(*) FROM activity_texts t WHERE t.user_id = u.id AND t.body IS NOT NULL) AS parts,
+            (SELECT COUNT(*) FROM posts p WHERE p.user_id = u.id) AS posts,
+            (SELECT COUNT(*) FROM comments c WHERE c.user_id = u.id) AS comments
+     FROM users u ORDER BY u.created_at ASC`
+  ),
+  updateUserRole: db.prepare('UPDATE users SET role = ? WHERE id = ?'),
+  updateUserPassword: db.prepare('UPDATE users SET password_hash = ? WHERE id = ?'),
+  deleteUser: db.prepare('DELETE FROM users WHERE id = ?'),
+  countAdmins: db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'"),
+  materialsByUser: db.prepare('SELECT file_kind, file_path FROM materials WHERE user_id = ?'),
+  activityFilesByUserRaw: db.prepare('SELECT file_kind, file_path FROM activity_files WHERE user_id = ?'),
+  countComments: db.prepare('SELECT COUNT(*) AS n FROM comments'),
+  countSubmissions: db.prepare('SELECT COUNT(*) AS n FROM submissions'),
 };
 
 // Apartados de la actividad rediseñada, en orden, con su ayuda contextual.
@@ -135,6 +157,24 @@ const ACTIVITY_PART_KEYS = ACTIVITY_PARTS.map((p) => p.key);
 const NUM_SESSIONS = Number(process.env.NUM_SESSIONS || 5);
 function sessionLabel(n) {
   return Number(n) > 0 ? `Sesión ${n}` : 'General';
+}
+
+// Ajustes editables desde el panel de administración. Si no se han tocado,
+// valen los de las variables de entorno (arriba). Una vez el admin los cambia,
+// mandan los guardados en la base de datos (sin necesidad de redeplegar).
+const SETTING_DEFAULTS = {
+  invite_code: INVITE_CODE,
+  registration_open: '1',
+  site_name: SITE_NAME,
+  num_sessions: String(NUM_SESSIONS),
+};
+function getSetting(key) {
+  const row = q.getSetting.get(key);
+  return row && row.value != null ? row.value : SETTING_DEFAULTS[key];
+}
+function currentNumSessions() {
+  const n = parseInt(getSetting('num_sessions'), 10);
+  return Number.isInteger(n) && n > 0 && n <= 20 ? n : 5;
 }
 
 // Dos categorías de material: el del curso en sí y el adicional.
@@ -298,14 +338,23 @@ app.use(
 
 // Variables disponibles en todas las plantillas.
 app.use((req, res, next) => {
-  res.locals.siteName = SITE_NAME;
+  // Refresca el usuario de la sesión desde la base de datos: si un admin lo
+  // eliminó, se cierra su sesión; si le cambió el rol, se aplica al momento.
+  if (req.session.user) {
+    const fresh = q.userById.get(req.session.user.id);
+    if (!fresh) {
+      return req.session.destroy(() => res.redirect('/login'));
+    }
+    req.session.user = { id: fresh.id, name: fresh.name, email: fresh.email, role: fresh.role };
+  }
+  res.locals.siteName = getSetting('site_name');
   res.locals.currentUser = req.session.user || null;
   res.locals.flash = req.session.flash || null;
   res.locals.active = '';
   res.locals.postTypes = POST_TYPES;
   res.locals.fmtDate = fmtDate;
   res.locals.sessionLabel = sessionLabel;
-  res.locals.numSessions = NUM_SESSIONS;
+  res.locals.numSessions = currentNumSessions();
   res.locals.materialKinds = MATERIAL_KINDS;
   res.locals.activityParts = ACTIVITY_PARTS;
   delete req.session.flash;
@@ -383,7 +432,14 @@ app.post('/register', (req, res) => {
   const password = String(req.body.password || '');
   const invite = String(req.body.invite || '').trim();
 
-  if (invite !== INVITE_CODE) {
+  // El registro se puede cerrar desde el panel de administración. Aun cerrado,
+  // se permite si todavía no hay ningún usuario (para crear el primer admin).
+  const registrationOpen = getSetting('registration_open') === '1';
+  if (!registrationOpen && q.countUsers.get().n > 0) {
+    flash(req, 'error', 'El registro está cerrado. Pide acceso a la organización del curso.');
+    return res.redirect('/login');
+  }
+  if (invite !== getSetting('invite_code')) {
     flash(req, 'error', 'El código de invitación no es correcto.');
     return res.redirect('/register');
   }
@@ -433,7 +489,7 @@ app.get('/materiales', requireAuth, (req, res) => {
   const all = q.listMaterials.all();
   // Agrupa por sesión: primero Sesión 1..N, y al final "General" si hay.
   const groups = [];
-  for (let s = 1; s <= NUM_SESSIONS; s++) {
+  for (let s = 1; s <= currentNumSessions(); s++) {
     const items = all.filter((m) => Number(m.session) === s);
     if (items.length) groups.push({ session: s, label: sessionLabel(s), items });
   }
@@ -453,7 +509,7 @@ app.post('/materiales', requireAuth, requireAdmin, upload.single('file'), (req, 
   const description = String(req.body.description || '').trim();
   const kind = MATERIAL_KINDS[req.body.kind] ? req.body.kind : 'curso';
   let session = parseInt(req.body.session, 10);
-  if (!Number.isInteger(session) || session < 0 || session > NUM_SESSIONS) session = 0;
+  if (!Number.isInteger(session) || session < 0 || session > currentNumSessions()) session = 0;
   let url = String(req.body.url || '').trim();
   if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
 
@@ -723,6 +779,133 @@ app.get('/actividad/archivo/:id/ver', requireAuth, (req, res) => {
     title: f.title || 'Adjunto', active: 'actividad', item: f, slides,
     backUrl: '/actividad/u/' + f.user_id, backLabel: 'Volver a la actividad',
   });
+});
+
+// ---- Panel de administración (solo admin) ----
+
+// Tamaño total de los archivos subidos (para mostrar el espacio usado).
+function dirSize(dir) {
+  let total = 0;
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, entry.name);
+      total += entry.isDirectory() ? dirSize(p) : fs.statSync(p).size;
+    }
+  } catch (_) { /* carpeta vacía o inexistente */ }
+  return total;
+}
+function humanSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  const units = ['KB', 'MB', 'GB'];
+  let n = bytes, i = -1;
+  do { n /= 1024; i++; } while (n >= 1024 && i < units.length - 1);
+  return n.toFixed(1) + ' ' + units[i];
+}
+
+app.get('/admin', requireAuth, requireAdmin, (req, res) => {
+  res.render('admin', {
+    title: 'Administración',
+    active: 'admin',
+    stats: {
+      users: q.countUsers.get().n,
+      materials: q.countMaterials.get().n,
+      posts: q.countPosts.get().n,
+      comments: q.countComments.get().n,
+      submissions: q.countSubmissions.get().n,
+      storage: humanSize(dirSize(UPLOAD_DIR)),
+    },
+    users: q.listUsersAdmin.all(),
+    materials: q.listMaterials.all(),
+    posts: q.listPosts.all(),
+    comments: q.listComments.all(),
+    settings: {
+      invite_code: getSetting('invite_code'),
+      registration_open: getSetting('registration_open') === '1',
+      site_name: getSetting('site_name'),
+      num_sessions: currentNumSessions(),
+    },
+  });
+});
+
+app.post('/admin/settings', requireAuth, requireAdmin, (req, res) => {
+  const invite = String(req.body.invite_code || '').trim();
+  const siteName = String(req.body.site_name || '').trim();
+  let numSessions = parseInt(req.body.num_sessions, 10);
+  if (!Number.isInteger(numSessions) || numSessions < 1 || numSessions > 20) numSessions = currentNumSessions();
+  if (invite.length >= 3) q.setSetting.run('invite_code', invite);
+  if (siteName.length >= 2) q.setSetting.run('site_name', siteName);
+  q.setSetting.run('num_sessions', String(numSessions));
+  q.setSetting.run('registration_open', req.body.registration_open ? '1' : '0');
+  flash(req, 'success', 'Ajustes guardados.');
+  res.redirect('/admin#ajustes');
+});
+
+app.post('/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
+  const u = q.userById.get(Number(req.params.id));
+  if (!u) { flash(req, 'error', 'Usuario no encontrado.'); return res.redirect('/admin#usuarios'); }
+  if (u.id === req.session.user.id) {
+    flash(req, 'error', 'No puedes cambiar tu propio rol, para no quedarte fuera.');
+    return res.redirect('/admin#usuarios');
+  }
+  const newRole = u.role === 'admin' ? 'member' : 'admin';
+  if (newRole === 'member' && q.countAdmins.get().n <= 1) {
+    flash(req, 'error', 'Debe quedar al menos un administrador.');
+    return res.redirect('/admin#usuarios');
+  }
+  q.updateUserRole.run(newRole, u.id);
+  flash(req, 'success', `${u.name} ahora es ${newRole === 'admin' ? 'administrador' : 'participante'}.`);
+  res.redirect('/admin#usuarios');
+});
+
+app.post('/admin/users/:id/password', requireAuth, requireAdmin, (req, res) => {
+  const u = q.userById.get(Number(req.params.id));
+  const pass = String(req.body.password || '');
+  if (!u) { flash(req, 'error', 'Usuario no encontrado.'); return res.redirect('/admin#usuarios'); }
+  if (pass.length < 6) {
+    flash(req, 'error', 'La nueva contraseña debe tener al menos 6 caracteres.');
+    return res.redirect('/admin#usuarios');
+  }
+  q.updateUserPassword.run(bcrypt.hashSync(pass, 10), u.id);
+  flash(req, 'success', `Contraseña de ${u.name} actualizada.`);
+  res.redirect('/admin#usuarios');
+});
+
+app.post('/admin/users/:id/delete', requireAuth, requireAdmin, (req, res) => {
+  const u = q.userById.get(Number(req.params.id));
+  if (!u) { flash(req, 'error', 'Usuario no encontrado.'); return res.redirect('/admin#usuarios'); }
+  if (u.id === req.session.user.id) {
+    flash(req, 'error', 'No puedes eliminar tu propia cuenta.');
+    return res.redirect('/admin#usuarios');
+  }
+  if (u.role === 'admin' && q.countAdmins.get().n <= 1) {
+    flash(req, 'error', 'Debe quedar al menos un administrador.');
+    return res.redirect('/admin#usuarios');
+  }
+  // Borra del disco los archivos del usuario (la cascada de la base de datos
+  // elimina sus filas, pero no los ficheros subidos).
+  for (const m of q.materialsByUser.all(u.id)) removeMaterialFiles(m);
+  for (const f of q.activityFilesByUserRaw.all(u.id)) removeMaterialFiles(f);
+  q.deleteUser.run(u.id);
+  flash(req, 'success', `Se ha eliminado a ${u.name} y todo su contenido.`);
+  res.redirect('/admin#usuarios');
+});
+
+app.post('/admin/materiales/:id/delete', requireAuth, requireAdmin, (req, res) => {
+  const m = q.materialById.get(Number(req.params.id));
+  if (m) { removeMaterialFiles(m); q.deleteMaterial.run(m.id); flash(req, 'success', 'Material eliminado.'); }
+  res.redirect('/admin#contenido');
+});
+
+app.post('/admin/muro/:id/delete', requireAuth, requireAdmin, (req, res) => {
+  const p = q.postById.get(Number(req.params.id));
+  if (p) { q.deletePost.run(p.id); flash(req, 'success', 'Aportación eliminada.'); }
+  res.redirect('/admin#contenido');
+});
+
+app.post('/admin/comentario/:id/delete', requireAuth, requireAdmin, (req, res) => {
+  const c = q.commentById.get(Number(req.params.id));
+  if (c) { q.deleteComment.run(c.id); flash(req, 'success', 'Comentario eliminado.'); }
+  res.redirect('/admin#contenido');
 });
 
 // Errores de subida (p. ej. archivo demasiado grande).

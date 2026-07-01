@@ -66,6 +66,13 @@ db.exec(`
     expires INTEGER NOT NULL
   );
 
+  -- Ajustes editables desde el panel de administración (código de invitación,
+  -- registro abierto/cerrado, nombre del sitio, nº de sesiones…).
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+  );
+
   -- Actividad final rediseñada: una entrega por participante.
   CREATE TABLE IF NOT EXISTS submissions (
     user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
