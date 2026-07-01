@@ -559,6 +559,36 @@ app.post('/materiales', requireAuth, requireAdmin, upload.single('file'), (req, 
   res.redirect('/materiales');
 });
 
+// Volcado rápido: varios archivos (arrastrados) de golpe, como material adicional
+// en la sesión elegida. El título de cada uno es el nombre del archivo.
+app.post('/materiales/bulk', requireAuth, requireAdmin, upload.array('files', 40), (req, res) => {
+  let session = parseInt(req.body.session, 10);
+  if (!Number.isInteger(session) || session < 0 || session > currentNumSessions()) session = 0;
+  const files = req.files || [];
+  if (!files.length) {
+    flash(req, 'error', 'Arrastra al menos un archivo.');
+    return res.redirect('/materiales');
+  }
+  let ok = 0, failed = 0;
+  for (const file of files) {
+    try {
+      const { filePath, fileKind, slideCount } = processUpload(file);
+      const title = file.originalname.replace(/\.[^.]+$/, '').trim() || file.originalname;
+      q.insertMaterial.run(
+        req.session.user.id, session, 'adicional', title, null, null, null,
+        filePath, file.originalname, fileKind, slideCount
+      );
+      ok++;
+    } catch (err) {
+      console.error('Volcado múltiple:', err.message);
+      fs.rmSync(file.path, { force: true });
+      failed++;
+    }
+  }
+  flash(req, 'success', `Añadidos ${ok} materiales a ${sessionLabel(session)} como material adicional${failed ? ` (${failed} no se pudieron procesar)` : ''}.`);
+  res.redirect('/materiales');
+});
+
 // Visor: muestra un PDF incrustado, las diapositivas de un PPTX, o un documento
 // de Google en modo lector, todo dentro de la web.
 const VIEWABLE = new Set(['pdf', 'slides', 'embed']);

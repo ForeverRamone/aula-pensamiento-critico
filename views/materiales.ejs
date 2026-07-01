@@ -41,6 +41,29 @@
     <button class="btn btn-primary" type="submit">Añadir material</button>
   </form>
 </details>
+
+<details class="composer">
+  <summary>+ Volcar varios PDF de golpe (material adicional)</summary>
+  <form action="/materiales/bulk" method="post" enctype="multipart/form-data" class="form">
+    <label>¿A qué sesión los asocio?
+      <select name="session">
+        <% for (let s = 1; s <= numSessions; s++) { %>
+          <option value="<%= s %>">Sesión <%= s %></option>
+        <% } %>
+        <option value="0">General (sin sesión)</option>
+      </select>
+    </label>
+    <div class="dropzone" id="dropzone">
+      <input type="file" name="files" multiple accept=".pdf,application/pdf" hidden>
+      <p class="dz-hint">Arrastra aquí tus PDF, o haz clic para elegirlos.</p>
+      <ul class="dz-list"></ul>
+    </div>
+    <p class="hint">Cada archivo se añadirá como <strong>material adicional</strong> con el nombre del fichero como título.</p>
+    <button class="btn btn-primary" type="submit">Subir los archivos</button>
+  </form>
+</details>
+
+<script src="/public/dropzone.js"></script>
 <% } %>
 
 <%

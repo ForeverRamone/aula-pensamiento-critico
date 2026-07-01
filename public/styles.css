@@ -226,6 +226,22 @@ a:hover { text-decoration: underline; }
 .auth-card .btn { align-self: stretch; width: 100%; margin-top: 4px; }
 .auth-alt { margin: 20px 0 0; font-size: 14px; color: var(--ink-soft); text-align: center; }
 
+/* ---- Zona de arrastrar y soltar (volcado múltiple) ---- */
+.dropzone {
+  border: 2px dashed var(--line); border-radius: 12px; background: var(--paper);
+  padding: 26px 20px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.dropzone:hover { border-color: var(--accent); }
+.dropzone.drag { border-color: var(--accent); background: rgba(178,83,52,.06); }
+.dropzone.has-files { border-style: solid; }
+.dz-hint { margin: 0; color: var(--ink-soft); font-weight: 500; }
+.dz-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.dz-list li {
+  font-size: 14px; background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 12px; cursor: default;
+}
+.dz-list li:before { content: "📄 "; }
+
 /* ---- Grupos por sesión (materiales) ---- */
 .session-group { margin-bottom: 32px; }
 .session-title {
