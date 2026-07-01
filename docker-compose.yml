@@ -1,9 +1,11 @@
 services:
   aula:
-    build: .
-    image: aula-pensamiento-critico
+    # Imagen ya construida y publicada automáticamente por GitHub Actions.
+    # El Synology solo la descarga: no construye nada (ni LibreOffice ni npm).
+    image: ghcr.io/foreverramone/aula-pensamiento-critico:latest
     container_name: aula-pensamiento-critico
     restart: unless-stopped
+    pull_policy: always
     ports:
       # HOST_PORT = puerto en el Synology (cámbialo si el 8080 está ocupado).
       # El 3000 de la derecha es el interno: no lo toques.

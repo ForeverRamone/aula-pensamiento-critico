@@ -54,6 +54,15 @@ Antes de nada, ten a mano tres valores que vas a definir tú:
 | `ADMIN_EMAIL`    | Tu email (quedará como administrador al registrarte).  |
 | `SESSION_SECRET` | Una frase larga e inventada (cuanto más rara, mejor).  |
 
+**La imagen se construye sola.** Cada vez que se publica un cambio, GitHub Actions
+construye la imagen y la sube a `ghcr.io/foreverramone/aula-pensamiento-critico`.
+El Synology **solo la descarga**, no construye nada.
+
+> **Paso único la primera vez:** la imagen publicada nace privada. Hazla pública
+> una sola vez: en GitHub → tu perfil → **Packages** → `aula-pensamiento-critico`
+> → **Package settings** → **Change visibility** → **Public**. Así el NAS puede
+> descargarla sin credenciales.
+
 ### Opción A · Portainer (Stack desde el repositorio)
 
 1. **Stacks → Add stack**.
@@ -62,18 +71,17 @@ Antes de nada, ten a mano tres valores que vas a definir tú:
 4. Repository reference: `refs/heads/main` · Compose path: `docker-compose.yml`
 5. En **Environment variables**, añade `INVITE_CODE`, `ADMIN_EMAIL` y
    `SESSION_SECRET` (y `HOST_PORT` si quieres otro puerto que el 8080).
-6. **Deploy the stack**. Portainer clona el repo, construye la imagen (la primera
-   vez tarda: instala LibreOffice) y arranca el contenedor.
+6. **Deploy the stack**. Portainer descarga la imagen y arranca el contenedor (rápido).
+
+**Para actualizar a una versión nueva:** abre el stack → **Pull and redeploy**.
+Descarga la última imagen y reinicia. Segundos, sin construir nada.
 
 ### Opción B · Synology DSM (Container Manager)
 
-1. Descarga el repo como ZIP desde GitHub (botón **Code → Download ZIP**) y
-   descomprímelo en una carpeta del NAS, p. ej. `/volume1/docker/aula`.
-2. **Container Manager → Proyecto → Crear**, elige esa carpeta y su
-   `docker-compose.yml`.
-3. Antes de arrancar, define las variables (`INVITE_CODE`, `ADMIN_EMAIL`,
-   `SESSION_SECRET`) en el paso de entorno, o crea un archivo `.env` en la misma
-   carpeta con esos valores.
+1. Descarga el `docker-compose.yml` del repo.
+2. **Container Manager → Proyecto → Crear**, apúntalo a ese `docker-compose.yml`.
+3. Define las variables (`INVITE_CODE`, `ADMIN_EMAIL`, `SESSION_SECRET`) en el
+   paso de entorno, o en un archivo `.env` junto al compose.
 4. Arranca el proyecto.
 
 ### Después de desplegar (ambos casos)
@@ -100,12 +108,8 @@ npm start
 # abre http://localhost:3000
 ```
 
-O con Docker:
-
-```bash
-docker compose up --build
-# abre http://localhost:8080
-```
+(El `docker-compose.yml` usa la imagen ya publicada en GHCR, así que en el NAS no
+se construye nada. Para construir la imagen a mano en local: `docker build -t aula .`)
 
 ---
 
