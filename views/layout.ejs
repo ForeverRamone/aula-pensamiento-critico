@@ -11,12 +11,23 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap header-inner">
+    <div class="wrap header-top">
       <a class="brand" href="/">
         <span class="brand-mark">✳</span>
         <span class="brand-name"><%= siteName %></span>
       </a>
-      <nav class="nav">
+      <div class="nav-user">
+        <button type="button" class="info-btn" onclick="document.getElementById('info-modal').showModal()">ⓘ Info</button>
+        <a class="who" href="/cuenta" title="Mi cuenta">
+          <%- include('partials/avatar', { u: currentUser }) %>
+          <span class="who-name"><%= currentUser.name %></span>
+          <% if (currentUser.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
+        </a>
+        <form action="/logout" method="post"><button class="link-btn">Salir</button></form>
+      </div>
+    </div>
+    <div class="header-nav-row">
+      <nav class="wrap nav">
         <a href="/" class="<%= active === 'inicio' ? 'is-active' : '' %>">Inicio</a>
         <a href="/curso" class="<%= active === 'curso' ? 'is-active' : '' %>">El curso</a>
         <a href="/materiales" class="<%= active === 'materiales' ? 'is-active' : '' %>">Materiales</a>
@@ -27,15 +38,6 @@
           <a href="/admin" class="<%= active === 'admin' ? 'is-active' : '' %>">Admin</a>
         <% } %>
       </nav>
-      <div class="nav-user">
-        <a class="who" href="/cuenta" title="Mi cuenta">
-          <%- include('partials/avatar', { u: currentUser }) %>
-          <span><%= currentUser.name %></span>
-          <% if (currentUser.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
-        </a>
-        <button type="button" class="info-btn" onclick="document.getElementById('info-modal').showModal()">ⓘ Info</button>
-        <form action="/logout" method="post"><button class="link-btn">Salir</button></form>
-      </div>
     </div>
   </header>
 
