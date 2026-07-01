@@ -120,5 +120,23 @@ ensureColumn('materials', 'file_kind', 'TEXT');
 ensureColumn('materials', 'slide_count', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('materials', 'embed_url', 'TEXT');
 ensureColumn('users', 'bio', 'TEXT');
+ensureColumn('users', 'avatar', 'TEXT');
+ensureColumn('users', 'last_seen', 'TEXT');
+ensureColumn('submissions', 'submitted', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('submissions', 'submitted_at', 'TEXT');
+ensureColumn('submissions', 'status', "TEXT NOT NULL DEFAULT 'pendiente'");
+ensureColumn('submissions', 'criteria', 'TEXT');
+ensureColumn('submissions', 'feedback', 'TEXT');
+ensureColumn('submissions', 'feedback_at', 'TEXT');
+ensureColumn('posts', 'featured', 'INTEGER NOT NULL DEFAULT 0');
+
+// Reacciones "útil" en las aportaciones del muro.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reactions (
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (post_id, user_id)
+  );
+`);
 
 module.exports = { db, DATA_DIR, UPLOAD_DIR };

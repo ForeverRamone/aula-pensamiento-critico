@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title><%= title %></title>
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; color: #1f1b16; max-width: 720px; margin: 40px auto; padding: 0 24px; line-height: 1.55; }
+    h1 { font-size: 24px; margin: 0 0 2px; }
+    .sub { color: #555; margin: 0 0 4px; font-size: 15px; }
+    .task { font-style: italic; color: #333; margin: 0 0 18px; }
+    h2 { font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin: 26px 0 8px; }
+    .tag { color: #777; font-size: 12px; font-weight: normal; }
+    .body { white-space: normal; }
+    .body ul, .body ol { margin: 6px 0; padding-left: 22px; }
+    .attach { font-size: 14px; color: #444; margin: 4px 0; }
+    .eval { border: 1px solid #ccc; border-radius: 8px; padding: 12px 16px; margin: 18px 0; }
+    .eval .st { font-weight: bold; }
+    .toolbar { margin: 0 0 24px; }
+    .toolbar button { font: inherit; padding: 8px 16px; cursor: pointer; }
+    .foot { margin-top: 40px; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print { .toolbar { display: none; } body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="window.print()">⬇ Guardar como PDF / Imprimir</button>
+  </div>
+
+  <h1>Actividad rediseñada “IA-consciente”</h1>
+  <p class="sub"><%= participant.name %> · <%= course.name %></p>
+  <% if (sub && sub.task_title) { %><p class="task">“<%= sub.task_title %>”</p><% } %>
+
+  <% if (sub && sub.status && sub.status !== 'pendiente') { %>
+    <div class="eval">
+      <p class="st">Resultado: <%= subStatus[sub.status] %></p>
+      <% if (sub.feedback) { %><div class="body"><%- sub.feedback %></div><% } %>
+    </div>
+  <% } %>
+
+  <% activityParts.forEach(function(p, i){
+       var body = texts[p.key];
+       var files = filesByPart[p.key] || [];
+       if (!body && !files.length) return; %>
+    <h2><%= i + 1 %>. <%= p.label %> <span class="tag">— <%= p.tag %></span></h2>
+    <% if (body) { %><div class="body"><%- body %></div><% } %>
+    <% files.forEach(function(f){ %>
+      <p class="attach">📎 <%= f.title || f.file_name || f.url %></p>
+    <% }) %>
+  <% }) %>
+
+  <p class="foot">Generado desde el espacio del curso · <%= course.name %></p>
+</body>
+</html>

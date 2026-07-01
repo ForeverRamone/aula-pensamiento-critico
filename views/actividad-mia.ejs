@@ -4,6 +4,35 @@
   <p>Rellena cada apartado a tu ritmo. Cada bloque se guarda por separado.</p>
 </div>
 
+<% if (sub && sub.status && sub.status !== 'pendiente') { %>
+  <div class="eval-banner eval-<%= sub.status %>">
+    <div>
+      <span class="eval-status"><%= subStatus[sub.status] %></span>
+      <% if (sub.feedback) { %><div class="eval-feedback rich-text"><%- sub.feedback %></div><% } %>
+    </div>
+  </div>
+<% } %>
+
+<div class="submit-panel <%= sub && sub.submitted ? 'is-done' : '' %>">
+  <div>
+    <% if (sub && sub.submitted) { %>
+      <strong>✓ Entrega finalizada</strong>
+      <span class="meta"><%= sub.submitted_at ? 'el ' + fmtDate(sub.submitted_at) : '' %> · avisa a la organización si necesitas reabrirla.</span>
+    <% } else { %>
+      <strong>Entrega en curso</strong>
+      <span class="meta">Cuando la tengas lista, márcala como finalizada para que la revisen.</span>
+    <% } %>
+  </div>
+  <div class="submit-actions">
+    <a class="btn btn-ghost btn-sm" href="/actividad/u/<%= currentUser.id %>/imprimir" target="_blank">⬇ Guardar en PDF</a>
+    <form action="/actividad/finalizar" method="post">
+      <button class="btn <%= sub && sub.submitted ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit">
+        <%= sub && sub.submitted ? 'Reabrir' : 'Marcar como finalizada' %>
+      </button>
+    </form>
+  </div>
+</div>
+
 <form action="/actividad/titulo" method="post" class="form title-form">
   <label>Título de tu tarea <span class="hint">(la asignatura y la tarea que rediseñas)</span>
     <div class="inline">

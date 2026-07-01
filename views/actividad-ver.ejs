@@ -2,7 +2,58 @@
   <a class="back" href="/actividad">← Volver a la actividad</a>
   <h1>Actividad de <%= participant.name %></h1>
   <% if (sub && sub.task_title) { %><p class="viewer-desc">“<%= sub.task_title %>”</p><% } %>
+  <div class="viewer-actions">
+    <a class="btn btn-ghost btn-sm" href="/actividad/u/<%= participant.id %>/imprimir" target="_blank">⬇ Guardar en PDF</a>
+    <% if (sub && sub.submitted) { %><span class="chip chip-muted">Entregada · <%= fmtDate(sub.submitted_at) %></span><% } %>
+  </div>
 </div>
+
+<% if (sub && sub.status && sub.status !== 'pendiente') { %>
+  <div class="eval-banner eval-<%= sub.status %>">
+    <div>
+      <span class="eval-status"><%= subStatus[sub.status] %></span>
+      <% if (sub.feedback) { %><div class="eval-feedback rich-text"><%- sub.feedback %></div><% } %>
+    </div>
+  </div>
+<% } %>
+
+<% if (currentUser.role === 'admin') { %>
+  <details class="composer" <%= (sub && sub.status !== 'pendiente') ? '' : 'open' %>>
+    <summary>Evaluar esta entrega</summary>
+    <form action="/actividad/u/<%= participant.id %>/evaluar" method="post" class="form">
+      <fieldset class="crit-set">
+        <legend>¿Cumple los cinco criterios?</legend>
+        <% certCriteria.forEach(function(c){ %>
+          <label class="check">
+            <input type="checkbox" name="crit_<%= c.key %>" value="1" <%= criteria[c.key] ? 'checked' : '' %>>
+            <span><%= c.label %></span>
+          </label>
+        <% }) %>
+      </fieldset>
+      <label>Resultado
+        <select name="status">
+          <% Object.keys(subStatus).forEach(function(k){ %>
+            <option value="<%= k %>" <%= (sub && sub.status === k) ? 'selected' : '' %>><%= subStatus[k] %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Feedback para el participante <span class="hint">(opcional)</span>
+        <div class="rte">
+          <div class="rte-toolbar">
+            <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="Subrayado"><span style="text-decoration:underline">U</span></button>
+            <button type="button" data-cmd="insertUnorderedList" title="Lista">•&nbsp;Lista</button>
+          </div>
+          <div class="rte-area" contenteditable="true" data-placeholder="Comentario, sugerencias, qué reforzar…"><%- (sub && sub.feedback) ? sub.feedback : '' %></div>
+          <input type="hidden" name="feedback" value="">
+        </div>
+      </label>
+      <button class="btn btn-primary btn-sm" type="submit">Guardar evaluación</button>
+    </form>
+  </details>
+  <script src="/public/editor.js"></script>
+<% } %>
 
 <%
   var hasAny = (sub && sub.task_title);

@@ -34,6 +34,8 @@
           <strong><%= u.name %></strong>
           <% if (u.role === 'admin') { %><span class="tag-admin">admin</span><% } %>
           <% if (u.id === currentUser.id) { %><span class="tag-you">tú</span><% } %>
+          <% if (u.submitted) { %><span class="tl-tag tag-submitted">entregada</span><% } %>
+          <% if (u.status && u.status !== 'pendiente') { %><span class="badge-status status-<%= u.status %>"><%= subStatus[u.status] %></span><% } %>
         </div>
         <% if (u.task_title) { %>
           <p class="person-bio">“<%= u.task_title %>”</p>

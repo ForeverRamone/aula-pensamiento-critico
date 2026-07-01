@@ -70,6 +70,28 @@ const q = {
   commentById: db.prepare('SELECT * FROM comments WHERE id = ?'),
   deleteComment: db.prepare('DELETE FROM comments WHERE id = ?'),
 
+  // Reacciones "útil" en el muro
+  addReaction: db.prepare('INSERT OR IGNORE INTO reactions (post_id, user_id) VALUES (?, ?)'),
+  removeReaction: db.prepare('DELETE FROM reactions WHERE post_id = ? AND user_id = ?'),
+  reactionCounts: db.prepare('SELECT post_id, COUNT(*) AS n FROM reactions GROUP BY post_id'),
+  myReactions: db.prepare('SELECT post_id FROM reactions WHERE user_id = ?'),
+  setFeatured: db.prepare('UPDATE posts SET featured = ? WHERE id = ?'),
+  listFeatured: db.prepare(
+    `SELECT p.*, u.name AS author FROM posts p JOIN users u ON u.id = p.user_id
+     WHERE p.featured = 1 ORDER BY p.created_at DESC, p.id DESC`
+  ),
+
+  // Perfil / cuenta
+  updateProfile: db.prepare('UPDATE users SET name = ?, bio = ? WHERE id = ?'),
+  updateAvatar: db.prepare('UPDATE users SET avatar = ? WHERE id = ?'),
+  updateLastSeen: db.prepare('UPDATE users SET last_seen = ? WHERE id = ?'),
+  countSince: db.prepare(
+    `SELECT
+       (SELECT COUNT(*) FROM materials WHERE created_at > ?) AS materials,
+       (SELECT COUNT(*) FROM posts WHERE created_at > ?) AS posts,
+       (SELECT COUNT(*) FROM comments WHERE created_at > ?) AS comments`
+  ),
+
   // Actividad rediseñada
   getSubmission: db.prepare('SELECT * FROM submissions WHERE user_id = ?'),
   upsertSubmission: db.prepare(
@@ -79,6 +101,18 @@ const q = {
   touchSubmission: db.prepare(
     `INSERT INTO submissions (user_id, updated_at) VALUES (?, datetime('now'))
      ON CONFLICT(user_id) DO UPDATE SET updated_at = datetime('now')`
+  ),
+  setSubmitted: db.prepare(
+    `INSERT INTO submissions (user_id, submitted, submitted_at, updated_at)
+     VALUES (?, ?, ?, datetime('now'))
+     ON CONFLICT(user_id) DO UPDATE SET submitted = excluded.submitted,
+       submitted_at = excluded.submitted_at, updated_at = datetime('now')`
+  ),
+  setEvaluation: db.prepare(
+    `INSERT INTO submissions (user_id, status, criteria, feedback, feedback_at, updated_at)
+     VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+     ON CONFLICT(user_id) DO UPDATE SET status = excluded.status, criteria = excluded.criteria,
+       feedback = excluded.feedback, feedback_at = excluded.feedback_at, updated_at = datetime('now')`
   ),
   getText: db.prepare('SELECT body FROM activity_texts WHERE user_id = ? AND part = ?'),
   upsertText: db.prepare(
@@ -96,7 +130,8 @@ const q = {
 
   // Participantes con estado de la actividad
   listUsersWithActivity: db.prepare(
-    `SELECT u.id, u.name, u.role, s.task_title, s.updated_at AS activity_updated
+    `SELECT u.id, u.name, u.role, u.avatar, s.task_title, s.updated_at AS activity_updated,
+            s.submitted, s.status
      FROM users u LEFT JOIN submissions s ON s.user_id = u.id
      ORDER BY u.created_at ASC`
   ),
@@ -158,6 +193,17 @@ const ACTIVITY_PARTS = [
   },
 ];
 const ACTIVITY_PART_KEYS = ACTIVITY_PARTS.map((p) => p.key);
+
+// Los cinco criterios de certificación (Apto / No apto) de la ficha del curso.
+const CERT_CRITERIA = [
+  { key: 'situada', label: 'Situada y “resistente” a la IA' },
+  { key: 'reglas', label: 'Reglas de uso claras' },
+  { key: 'proceso', label: 'Evalúa el proceso' },
+  { key: 'autoria', label: 'Verifica la autoría' },
+  { key: 'etica', label: 'Éticamente cuidada' },
+];
+const CERT_CRITERIA_KEYS = CERT_CRITERIA.map((c) => c.key);
+const SUB_STATUS = { pendiente: 'Pendiente', apto: 'Apto', no_apto: 'No apto' };
 
 // El curso tiene 5 sesiones. La "sesión 0" es material general (sin sesión).
 const NUM_SESSIONS = Number(process.env.NUM_SESSIONS || 5);
@@ -385,6 +431,8 @@ app.use((req, res, next) => {
   res.locals.activityParts = ACTIVITY_PARTS;
   res.locals.course = course;
   res.locals.fmtSessionDate = fmtSessionDate;
+  res.locals.certCriteria = CERT_CRITERIA;
+  res.locals.subStatus = SUB_STATUS;
   delete req.session.flash;
   next();
 });
@@ -822,11 +870,13 @@ app.post('/perfil', requireAuth, (req, res) => {
 // ---- Actividad rediseñada (la construyen los participantes) ----
 function buildActivity(userId) {
   const sub = q.getSubmission.get(userId) || null;
+  let criteria = {};
+  if (sub && sub.criteria) { try { criteria = JSON.parse(sub.criteria); } catch (_) {} }
   const texts = {};
   for (const r of q.textsByUser.all(userId)) texts[r.part] = r.body;
   const filesByPart = {};
   for (const f of q.filesByUser.all(userId)) (filesByPart[f.part] ||= []).push(f);
-  return { sub, texts, filesByPart };
+  return { sub, criteria, texts, filesByPart };
 }
 
 app.get('/actividad', requireAuth, (req, res) => {
@@ -933,6 +983,43 @@ app.get('/actividad/archivo/:id/ver', requireAuth, (req, res) => {
     title: f.title || 'Adjunto', active: 'actividad', item: f, slides,
     backUrl: '/actividad/u/' + f.user_id, backLabel: 'Volver a la actividad',
   });
+});
+
+// El participante marca (o reabre) su entrega como finalizada.
+app.post('/actividad/finalizar', requireAuth, (req, res) => {
+  const sub = q.getSubmission.get(req.session.user.id);
+  const now = sub && sub.submitted ? 0 : 1;
+  const stamp = now ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+  q.setSubmitted.run(req.session.user.id, now, stamp);
+  flash(req, 'success', now ? 'Entrega marcada como finalizada. Puedes reabrirla si necesitas cambiarla.' : 'Entrega reabierta.');
+  res.redirect('/actividad/mia');
+});
+
+// El profesor (admin) evalúa la entrega de un participante.
+app.post('/actividad/u/:id/evaluar', requireAuth, requireAdmin, (req, res) => {
+  const user = q.userById.get(Number(req.params.id));
+  if (!user) {
+    flash(req, 'error', 'Participante no encontrado.');
+    return res.redirect('/actividad');
+  }
+  const status = SUB_STATUS[req.body.status] ? req.body.status : 'pendiente';
+  const criteria = {};
+  for (const c of CERT_CRITERIA) criteria[c.key] = req.body['crit_' + c.key] ? true : false;
+  const feedback = cleanHtml(req.body.feedback);
+  q.setEvaluation.run(user.id, status, JSON.stringify(criteria), feedback);
+  flash(req, 'success', `Evaluación de ${user.name} guardada.`);
+  res.redirect('/actividad/u/' + user.id);
+});
+
+// Vista de impresión de una entrega (para "Guardar como PDF" desde el navegador).
+app.get('/actividad/u/:id/imprimir', requireAuth, (req, res) => {
+  const user = q.userById.get(Number(req.params.id));
+  if (!user) {
+    flash(req, 'error', 'Participante no encontrado.');
+    return res.redirect('/actividad');
+  }
+  const data = buildActivity(user.id);
+  res.render('actividad-imprimir', { title: 'Entrega de ' + user.name, layout: false, participant: user, ...data });
 });
 
 // ---- Panel de administración (solo admin) ----
