@@ -278,6 +278,24 @@ function googleEmbed(url) {
   return null;
 }
 
+// Los nombres de archivo en multipart llegan decodificados como latin1; hay que
+// reinterpretarlos como UTF-8 para conservar acentos, guiones largos, etc.
+// (Si no, "—" se convierte en "â€", "ñ" en "Ã±", y demás.)
+function decodeName(name) {
+  try { return Buffer.from(String(name || ''), 'latin1').toString('utf8'); }
+  catch { return name; }
+}
+
+// Versión con guardas para reparar textos ya guardados con esa codificación
+// rota. Solo actúa si toda la cadena cabe en latin1 y el resultado es UTF-8
+// válido; así no toca los títulos correctos. Es idempotente.
+function fixEncoding(s) {
+  if (!s) return s;
+  for (const ch of s) if (ch.codePointAt(0) > 0xff) return s; // ya es Unicode correcto
+  const r = Buffer.from(s, 'latin1').toString('utf8');
+  return r !== s && !r.includes('�') ? r : s;
+}
+
 // Limpia el HTML del editor de texto enriquecido: conserva formato básico
 // (negrita, cursiva, subrayado, listas, enlaces) y elimina cualquier cosa
 // peligrosa (scripts, estilos raros, etc.). Sirve también para depurar el
@@ -556,7 +574,7 @@ app.post('/materiales', requireAuth, requireAdmin, upload.single('file'), (req, 
     url || null,
     embedUrl,
     filePath,
-    file ? file.originalname : null,
+    file ? decodeName(file.originalname) : null,
     fileKind,
     slideCount
   );
@@ -578,10 +596,11 @@ app.post('/materiales/bulk', requireAuth, requireAdmin, upload.array('files', 40
   for (const file of files) {
     try {
       const { filePath, fileKind, slideCount } = processUpload(file);
-      const title = file.originalname.replace(/\.[^.]+$/, '').trim() || file.originalname;
+      const name = decodeName(file.originalname);
+      const title = name.replace(/\.[^.]+$/, '').trim() || name;
       q.insertMaterial.run(
         req.session.user.id, session, 'adicional', title, null, null, null,
-        filePath, file.originalname, fileKind, slideCount
+        filePath, name, fileKind, slideCount
       );
       ok++;
     } catch (err) {
@@ -662,7 +681,7 @@ app.post('/materiales/:id/editar', requireAuth, requireAdmin, upload.single('fil
       const r = processUpload(req.file);
       removeMaterialFiles(m); // borra el archivo/diapositivas anteriores
       filePath = r.filePath; fileKind = r.fileKind; slideCount = r.slideCount;
-      fileName = req.file.originalname; embedUrl = null;
+      fileName = decodeName(req.file.originalname); embedUrl = null;
     } catch (err) {
       console.error('Editar material (archivo):', err.message);
       fs.rmSync(req.file.path, { force: true });
@@ -1022,6 +1041,23 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send('Error del servidor');
 });
+
+// Repara, al arrancar, los nombres de archivo/títulos que se hubieran guardado
+// con la codificación rota (mojibake) antes de aplicar el arreglo. Es seguro
+// (no toca los correctos) e idempotente.
+function repairEncoding() {
+  let fixed = 0;
+  for (const table of ['materials', 'activity_files']) {
+    const rows = db.prepare(`SELECT id, title, file_name FROM ${table}`).all();
+    const upd = db.prepare(`UPDATE ${table} SET title = ?, file_name = ? WHERE id = ?`);
+    for (const r of rows) {
+      const t = fixEncoding(r.title), f = fixEncoding(r.file_name);
+      if (t !== r.title || f !== r.file_name) { upd.run(t, f, r.id); fixed++; }
+    }
+  }
+  if (fixed) console.log(`  Reparados ${fixed} nombres con codificación rota.`);
+}
+repairEncoding();
 
 app.listen(PORT, () => {
   console.log(`\n  ${SITE_NAME}  →  http://localhost:${PORT}`);
